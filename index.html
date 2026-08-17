@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cifras</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #f3f4f6;
+            --bg-tela: #ffffff;
+            --bg-header: #4f46e5;
+            --text-main: #1f2937;
+            --border-color: #e5e7eb;
+            --btn-voltar-bg: #ffffff;
+            --toolbar-bg: #f9fafb;
+            --acorde-color: #4f46e5;
+            --text-muted: #6b7280;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+        [data-tema="escuro"] {
+            --bg-body: #0a111e;
+            --bg-tela: #0d1526;
+            --bg-header: #0a111e;
+            --text-main: #f9fafb;
+            --border-color: #1e293b;
+            --btn-voltar-bg: #151e32;
+            --toolbar-bg: #0d1526;
+            --acorde-color: #818cf8;
+            --text-muted: #94a3b8;
+        }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            margin: 0;
+            background-color: var(--bg-body);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        header {
+            background-color: var(--bg-header);
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-md);
+            z-index: 10;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        header button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        header button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .tela {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+            background-color: var(--bg-body);
+        }
+        .btn-principal, .btn-acao, .btn-excluir, .btn-cancelar {
+            border: none;
+            padding: 16px;
+            width: 100%;
+            font-size: 16px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            margin-bottom: 12px;
+            font-weight: 600;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.1s, box-shadow 0.2s, filter 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-principal:active, .btn-acao:active { transform: scale(0.98); }
+        .btn-principal:hover, .btn-acao:hover { filter: brightness(1.1); }
+        .btn-principal { background-color: var(--bg-header); color: white; }
+        .btn-acao { background-color: var(--bg-header); color: white; }
+        .btn-excluir { background-color: #ef4444; color: white; }
+        .btn-cancelar { background-color: var(--btn-voltar-bg); color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn-voltar {
+            position: fixed;
+            top: 50%;
+            left: 10px;
+            bottom: auto;
+            right: auto;
+            transform: translateY(-50%);
+            opacity: 0.6;
+            z-index: 999;
+            background-color: var(--btn-voltar-bg);
+            border: 1px solid var(--border-color);
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            color: var(--text-main);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: opacity 0.2s;
+        }
+        .btn-voltar:hover {
+            transform: translateY(-50%);
+            opacity: 1;
+        }
+        .container-central { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 15px; max-width: 320px; margin: 0 auto; }
+        .container-formulario { display: flex; flex-direction: column; max-width: 400px; margin: 0 auto; gap: 20px; background: var(--bg-tela); padding: 25px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
+        .campo-grupo { display: flex; flex-direction: column; gap: 8px; }
+        .campo-grupo label { font-weight: 600; font-size: 14px; color: var(--text-muted); }
+        .campo-grupo input, .campo-grupo select {
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 16px;
+            outline: none;
+            background-color: var(--bg-tela);
+            color: var(--text-main);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .campo-grupo input:focus, .campo-grupo select:focus {
+            border-color: var(--bg-header);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        .item-lista { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 16px 20px; 
+            margin-bottom: 12px;
+            border-radius: 20px;
+            background-color: var(--bg-tela);
+            border: 1px solid var(--border-color);
+            cursor: pointer; 
+        }
+        .item-lista:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .item-lista-esquerda { display: flex; align-items: center; gap: 15px; }
+        .icone-opcoes { color: var(--text-muted); padding: 5px 10px; font-size: 20px; cursor: pointer; border-radius: 50%; transition: background 0.2s; }
+        .icone-opcoes:hover { background: var(--btn-voltar-bg); color: var(--text-main); }
+        #editor-visual, #visualizador-cifra {
+            width: 100% !important; min-height: 70vh; border: none;
+            font-family: 'Fira Code', monospace;
+            font-weight: 400;
+            font-size: 16px;
+            padding: 12px 6px 60px 6px;
+            white-space: pre; overflow-x: auto; outline: none; background: var(--bg-tela);
+            box-sizing: border-box; line-height: 1.35; tab-size: 4; font-variant-ligatures: none;
+            color: var(--text-main); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+            margin-bottom: 80px;
+        }
+        @media (max-width: 600px) {
+            .container, .tela, #tela-visualizador, main {
+                padding-left: 4px !important;
+                padding-right: 4px !important;
+            }
+        }    
+        #editor-visual { border: 2px solid var(--border-color); }
+        #editor-visual:focus { border-color: var(--bg-header); }
+        .acorde { color: var(--acorde-color); font-weight: 700; }
+        .modal-fundo { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-caixa { background-color: var(--bg-tela); padding: 25px; border-radius: var(--radius-lg); width: 90%; max-width: 320px; display: flex; flex-direction: column; gap: 12px; color: var(--text-main); box-shadow: var(--shadow-lg); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .grade-tons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
+        .grade-tons .btn-acao { padding: 12px 0; margin: 0; font-size: 15px; }
+        .btn-toolbar { width: 40px; height: 40px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-tela); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: var(--text-main); transition: background 0.2s; }
+        .btn-toolbar:hover { background: var(--border-color); }
+        #input-pesquisa { width: 100%; padding: 16px; margin-bottom: 25px; box-sizing: border-box; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 16px; box-shadow: var(--shadow-sm); background-color: var(--bg-tela); color: var(--text-main); outline: none; }
+        #input-pesquisa:focus { border-color: var(--bg-header); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
+        [data-tema="escuro"] font[color="black"], [data-tema="escuro"] font[color="#000000"], [data-tema="escuro"] span[style*="color: black"], [data-tema="escuro"] span[style*="color:black"], [data-tema="escuro"] span[style*="color: #000000"], [data-tema="escuro"] span[style*="color:#000000"], [data-tema="escuro"] span[style*="rgb(0, 0, 0)"], [data-tema="escuro"] button[title="Preto"] { color: #f9fafb !important; }
+        [data-tema="escuro"] font[color="red"], [data-tema="escuro"] span[style*="color: red"], [data-tema="escuro"] span[style*="color:red"] { color: #ef4444 !important; text-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
+        [data-tema="escuro"] font[color="darkgreen"], [data-tema="escuro"] span[style*="color: darkgreen"], [data-tema="escuro"] span[style*="color:darkgreen"] { color: #10b981 !important; text-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+        [data-tema="escuro"] font[color="#4B0082"], [data-tema="escuro"] span[style*="color: rgb(75, 0, 130)"], [data-tema="escuro"] span[style*="color:#4B0082"], [data-tema="escuro"] span[style*="color: #4B0082"] { color: #a855f7 !important; text-shadow: 0 0 8px rgba(168, 85, 247, 0.4); }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <input type="file" id="input-importar" accept=".json" style="display: none;" onchange="processarImportacao(event)">
+    <header style="background: var(--bg-body); box-shadow: none; padding: 20px;">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <button onclick="abrirMenuPrincipal()" style="color: var(--text-main); font-size: 22px; padding: 0;"><i class="fa-solid fa-bars"></i></button>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fa-solid fa-music" style="color: #3b82f6; font-size: 28px; filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.8));"></i>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-weight: 700; font-size: 20px; line-height: 1.2; color: var(--text-main);">Cifras</span>
+                    <span style="font-size: 13px; color: var(--text-muted); font-weight: 400;">Repertório da Banda</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="header-acoes-padrao" style="display: flex; gap: 10px; align-items: center;">
+        <button onclick="alternarTema()" title="Mudar Tema" style="background: var(--bg-tela); color: var(--text-main); border-radius: 50%; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-moon"></i></button>
+        <button onclick="trocarTela('pesquisa')" title="Pesquisar" style="background: var(--bg-tela); color: var(--text-main); border-radius: 50%; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-magnifying-glass"></i></button>
+        <button onclick="trocarTela('selecao-criacao-pasta')" title="Nova Cifra" style="background: var(--bg-tela); color: var(--text-main); border-radius: 50%; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-plus"></i></button>
+    </div>
+    <div id="header-acoes-editor" style="display: none; gap: 8px; align-items: center;">
+        <button onclick="alternarTema()" title="Mudar Tema" style="color: var(--text-main);"><i class="fa-solid fa-moon"></i></button>
+        <button onclick="abrirModalTom()" title="Mudar tom" style="color: var(--text-main);"><i class="fa-solid fa-music"></i></button>
+        <button onclick="alterarFonte(-2)" title="Diminuir Fonte" style="color: var(--text-main);"><i class="fa-solid fa-minus"></i></button>
+        <button onclick="alterarFonte(2)" title="Aumentar Fonte" style="color: var(--text-main);"><i class="fa-solid fa-plus"></i></button>
+        <button onclick="salvarCifra()" style="margin-left: 5px; color: var(--text-main);" id="btn-salvar-cifra" title="Salvar"><i class="fa-solid fa-floppy-disk"></i></button>
+    </div>
+</header>
+    <div id="tela-inicial" class="tela">
+        <div style="position: relative; margin-bottom: 25px;" onclick="trocarTela('pesquisa')">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+            <input type="text" placeholder="Buscar por música ou repertório..." style="width: 100%; margin: 0; padding: 16px 16px 16px 45px; box-sizing: border-box; border-radius: 12px; border: 1px solid var(--border-color); background-color: var(--bg-tela); color: var(--text-main); font-size: 15px; outline: none; cursor: pointer;" readonly>
+        </div>
+        
+        <div style="display: flex; background: var(--bg-tela); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; margin-bottom: 25px;">
+            <div style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <span style="font-size: 24px; color: #3b82f6;"><i class="fa-solid fa-folder"></i></span>
+                <div>
+                    <div id="contador-pastas" style="font-weight: 700; font-size: 16px; color: #3b82f6;">0</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Pastas</div>
+                </div>
+            </div>
+            
+            <div style="width: 1px; background-color: var(--border-color); margin: 0 5px;"></div>
+
+            <div style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <span style="font-size: 24px; color: #8b5cf6;"><i class="fa-solid fa-guitar"></i></span>
+                <div>
+                    <div id="contador-musicas" style="font-weight: 700; font-size: 16px; color: #8b5cf6;">0</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Músicas</div>
+                </div>
+            </div>
+
+            <div style="width: 1px; background-color: var(--border-color); margin: 0 5px;"></div>
+
+            <div style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <span style="font-size: 24px; color: #fbbf24;"><i class="fa-solid fa-cloud-arrow-up"></i></span>
+                <div>
+                    <div id="contador-memoria" style="font-weight: 700; font-size: 16px; color: #fbbf24;">Sincronizado</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Github</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; font-weight: 600; font-size: 16px;">
+            <i class=""></i> Pastas
+        </div>
+        <div id="lista-pastas-container"></div>
+        <style>
+        @keyframes flutuar {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+            100% { transform: translateY(0px); }
+        }
+        .bloco-ad-flutuante {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            animation: flutuar 4s ease-in-out infinite;
+        }
+        
+        button[onclick="trocarTela('selecao-criacao-pasta')"],
+        button[onclick="iniciarImportacao()"],
+        .icone-opcoes,
+        #btn-renomear,
+        #btn-mover,
+        #btn-copiar,
+        #btn-excluir,
+        #btn-salvar-cifra {
+            display: none !important;
+        }
+        
+        </style>
+        <div class="bloco-ad-flutuante">
+                <div style="background: var(--bg-tela); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 600; box-shadow: var(--shadow-sm);">
+                    AD Uma Vida Com Deus - Filial de Aparecida/SP
+                </div>
+            </div>
+        </div>
+        <div id="selecao-criacao-pasta" class="tela" style="display: none;">
+        <button class="btn-voltar" style="position: relative !important; margin-bottom: 20px !important; left: 0 !important; bottom: 0 !important; display: inline-block !important;" onclick="trocarTela('tela-inicial')"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+        <div class="container-central">
+            <button class="btn-principal" onclick="prepararCriacao('nova')"><i class="fa-solid fa-folder-plus"></i> Criar nova pasta</button>
+            <button class="btn-principal" style="background-color: var(--btn-voltar-bg); color: var(--text-main); border: 2px solid var(--border-color);" onclick="prepararCriacao('existente')"><i class="fa-solid fa-folder-open"></i> Selecionar pasta existente</button>
+        </div>
+    </div>
+    <div id="tela-criar-pasta" class="tela" style="display: none;">
+        <button class="btn-voltar" style="position: relative !important; margin-bottom: 20px !important; left: 0 !important; bottom: 0 !important; display: inline-block !important;" onclick="trocarTela('selecao-criacao-pasta')"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+        <div class="container-formulario">
+            <div id="div-nome-pasta" class="campo-grupo">
+                <label>Nome da nova pasta</label>
+                <input type="text" id="input-nome-pasta" placeholder="Ex: Harpa Cristã">
+            </div>
+            <div id="div-select-pasta" class="campo-grupo" style="display:none;">
+                <label>Escolher pasta</label>
+                <select id="select-pasta-existente"></select>
+            </div>
+            <div class="campo-grupo">
+                <label>Nome da música</label>
+                <input type="text" id="input-nome-musica" placeholder="Ex: Alvo mais que a neve">
+            </div>
+            <button class="btn-acao" onclick="iniciarEditor()" style="margin-top: 10px;"><i class="fa-solid fa-pen"></i> Criar cifra</button>
+        </div>
+    </div>    
+    <div id="tela-musicas-pasta" class="tela" style="display: none;">
+        <button class="btn-voltar" onclick="trocarTela('tela-inicial')"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+        <h2 id="titulo-pasta-atual" style="margin-top: 0; margin-bottom: 20px; font-size: 24px;"></h2>
+        <div id="lista-musicas-container"></div>
+    </div>
+    <div id="tela-editor-cifra" class="tela" style="display: none;">
+        <button class="btn-voltar" onclick="voltarDoEditor()"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+        <div id="toolbar-editor" style="display: none; gap: 8px; margin-bottom: 15px; background: var(--bg-tela); padding: 12px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); align-items: center; flex-wrap: wrap;">
+            <button class="btn-toolbar" onmousedown="event.preventDefault();" onclick="document.execCommand('bold', false, null)" style="font-weight: bold;" title="Negrito"><i class="fa-solid fa-bold"></i></button>
+            <button class="btn-toolbar" onmousedown="event.preventDefault();" onclick="document.execCommand('italic', false, null)" style="font-style: italic;" title="Itálico"><i class="fa-solid fa-italic"></i></button>
+            <span style="margin: 0 5px; color: var(--border-color);">|</span>
+            <button class="btn-toolbar" onmousedown="event.preventDefault();" onclick="document.execCommand('foreColor', false, 'black')" style="color: var(--text-main);" title="Preto"><i class="fa-solid fa-palette"></i></button>
+            <button class="btn-toolbar" onmousedown="event.preventDefault();" onclick="document.execCommand('foreColor', false, 'red')" style="color: #ef4444;" title="Vermelho"><i class="fa-solid fa-palette"></i></button>
+            <button class="btn-toolbar" onmousedown="event.preventDefault();" onclick="document.execCommand('foreColor', false, 'darkgreen')" style="color: #10b981;" title="Verde Escuro"><i class="fa-solid fa-palette"></i></button>
+            <button class="btn-toolbar" onmousedown="event.preventDefault();" onclick="document.execCommand('foreColor', false, '#4B0082')" style="color: #a855f7;" title="Roxo Escuro"><i class="fa-solid fa-palette"></i></button>
+            <span style="font-size: 13px; color: var(--text-muted); margin-left: auto;">Selecione o texto para formatar</span>
+        </div>
+        <div id="editor-visual" contenteditable="true" spellcheck="false" style="display: none;"></div>
+        <div id="visualizador-cifra"></div>
+    </div>
+    <div id="pesquisa" class="tela" style="display: none;">
+        <button class="btn-voltar" onclick="trocarTela('tela-inicial')"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+        <input type="text" id="input-pesquisa" onkeyup="realizarPesquisa()" placeholder="Buscar música ou pasta...">
+        <div id="resultado-pesquisa"></div>
+    </div>
+    <div id="modal-opcoes" class="modal-fundo">
+        <div class="modal-caixa">
+            <h3 id="titulo-modal" style="margin: 0 0 15px 0; text-align: center; font-size: 18px; line-height: 1.4;">Opções</h3>
+            <button class="btn-acao" onclick="baixarArquivo()"><i class="fa-solid fa-download"></i> Exportar (Baixar)</button>
+            <button class="btn-acao" onclick="renomearItem()" id="btn-renomear"><i class="fa-solid fa-pen-to-square"></i> Renomear</button>
+            <button class="btn-acao" id="btn-mover" onclick="abrirModalTransferencia('mover')"><i class="fa-solid fa-arrows-up-down-left-right"></i> Mover para outra pasta</button>
+            <button class="btn-acao" id="btn-copiar" onclick="abrirModalTransferencia('copiar')"><i class="fa-solid fa-copy"></i> Copiar para outra pasta</button>
+            <button class="btn-excluir" id="btn-excluir" onclick="excluirItem()"><i class="fa-solid fa-trash"></i> Excluir</button>
+            <button class="btn-cancelar" onclick="fecharModal('modal-opcoes')">Cancelar</button>
+        </div>
+    </div>
+    <div id="modal-transferir" class="modal-fundo">
+        <div class="modal-caixa">
+            <h3 id="titulo-modal-transferencia" style="margin: 0 0 10px 0; text-align: center;">Transferir</h3>
+            <div class="campo-grupo">
+                <label>Selecione a pasta destino:</label>
+                <select id="select-pasta-destino"></select>
+            </div>
+            <button class="btn-acao" id="btn-confirmar-transferencia" onclick="confirmarTransferencia()" style="margin-top: 10px;">Confirmar</button>
+            <button class="btn-cancelar" onclick="fecharModal('modal-transferir')">Cancelar</button>
+        </div>
+    </div>
+    <div id="modal-menu-principal" class="modal-fundo">
+        <div class="modal-caixa">
+            <h3 style="margin: 0 0 15px 0; text-align: center;">Menu Principal</h3>
+            <button class="btn-acao" onclick="iniciarImportacao()"><i class="fa-solid fa-file-import"></i> Importar Arquivo (.json)</button>
+            <button class="btn-acao" onclick="exportarTudo()" style="background-color: #10b981;"><i class="fa-solid fa-file-export"></i> Exportar Tudo (.json)</button>
+            <button class="btn-cancelar" onclick="fecharModal('modal-menu-principal')">Fechar</button>
+        </div>
+    </div>
+    <div id="modal-tom" class="modal-fundo">
+        <div class="modal-caixa">
+            <h3 style="margin: 0 0 10px 0; text-align: center;">Mudar Tom</h3>
+            <div class="grade-tons">
+                <button class="btn-acao" onclick="aplicarTransposicao('C')">C</button>
+                <button class="btn-acao" onclick="aplicarTransposicao('C#')">C#</button>
+                <button class="btn-acao" onclick="aplicarTransposicao('D')">D</button>
+                <button class="btn-acao" onclick="aplicarTransposicao('D#')">D#</button>
+                <button class="btn-acao" onclick="aplicarTransposicao('E')">E</button>
+                <button class="btn-acao" onclick="aplicarTransposicao('F')">F</button>
+                <button class="btn-acao" onclick="aplicarTransposicao('F#')">F#</button>
+                <button class="btn-acao" onclick="aplicarTransposicao('G')">G</button>
+                <button class="btn-acao" onclick="aplicarTransposicao('G#')">G#</button>
+                <button class="btn-acao" onclick="aplicarTransposicao('A')">A</button>
+                <button class="btn-acao" onclick="aplicarTransposicao('A#')">A#</button>
+                <button class="btn-acao" onclick="aplicarTransposicao('B')">B</button>
+            </div>
+            <button class="btn-cancelar" onclick="fecharModal('modal-tom')">Cancelar</button>
+        </div>
+    </div>
+    <script>
+    if (localStorage.getItem('temaCifras') === 'escuro') document.documentElement.setAttribute('data-tema', 'escuro');
+    function alternarTema() {
+        let temaAtual = document.documentElement.getAttribute('data-tema');
+        let novoTema = temaAtual === 'escuro' ? 'claro' : 'escuro';
+        if (novoTema === 'escuro') {
+            document.documentElement.setAttribute('data-tema', 'escuro');
+        } else {
+            document.documentElement.removeAttribute('data-tema');
+        }
+        localStorage.setItem('temaCifras', novoTema);
+    }
+    
+    let bancoDeDados = {};
+    const salvoLocal = localStorage.getItem('appCifras');
+    if (salvoLocal) {
+        try {
+            bancoDeDados = JSON.parse(salvoLocal);
+        } catch (e) {
+            bancoDeDados = {};
+        }
+    }
+
+    let contextoEdicao = { pasta: "", musicaTitulo: "", indexEdicao: -1 };
+    let contextoExportacao = { tipo: "", pasta: "", indexMusica: -1 };
+    let modoTransferencia = 'mover';
+    let tamanhoFonte = 16;
+    let ajusteManualFonte = 0;
+    let tomOriginal = null;
+    const FONTE_MINIMA = 10;
+    const FONTE_MAXIMA = 40;
+    const notasEscala = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const regexAcordeExato = /^([A-G][b#]?m?(?:2|4|5|6|7|9|11|13|maj7|maj9|7M|9M|sus|sus2|sus4|dim|dim7|aug|add9|m7b5)?(\/[A-G][b#]?)?)$/i;
+    const regexTags = /^(tom|intro|capo|ponte|refrão|refrao|coro|solo|final|parte|primeira|segunda|terceira|\d+)\s*:?\s*/i;
+    const tagsBloco = new Set(['address', 'article', 'aside', 'blockquote', 'div', 'dl', 'dt', 'dd', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr', 'li', 'main', 'nav', 'ol', 'p', 'pre', 'section', 'table', 'ul']);
+    const tagsInlinePermitidas = new Set(['b', 'strong', 'i', 'em', 'u', 's', 'strike', 'span', 'font', 'small', 'big', 'sub', 'sup', 'mark']);
+    const tagsDescartadas = new Set(['script', 'style', 'iframe', 'object', 'embed', 'link', 'meta', 'svg', 'math', 'img', 'video', 'audio', 'canvas', 'form', 'input', 'button', 'select', 'textarea']);
+    const propriedadesCSSPermitidas = new Set(['color', 'background-color', 'font-size', 'font-weight', 'font-style', 'text-decoration']);
+    
+    bancoDeDados = normalizarBancoDeDados(bancoDeDados);
+    
+    function limparNomeVisivel(valor, fallback) {
+        let texto = String(valor == null ? '' : valor).replace(/[\r\n]+/g, ' ').trim();
+        return texto || fallback;
+    }
+    function nomeArquivoSeguro(nome, fallback) {
+        return limparNomeVisivel(nome, fallback).replace(/[\\/:*?"<>|]+/g, '_').slice(0, 90) || fallback;
+    }
+    function normalizarHTMLSalvo(letra) {
+        let bruto = String(letra == null ? '' : letra);
+        if (!/<(?:br|div|p|span|b|strong|i|em|u|s|strike|font|small|big|sub|sup|mark)\b/i.test(bruto)) {
+            bruto = escaparHTML(bruto).replace(/\r\n?|\n/g, '<br>');
+        }
+        return formatarCifraVisual(bruto);
+    }
+    function normalizarMusica(musica, fallbackTitulo) {
+        let origem = musica && typeof musica === 'object' ? musica : {};
+        return { titulo: limparNomeVisivel(origem.titulo, fallbackTitulo || 'Musica sem titulo'), letra: normalizarHTMLSalvo(origem.letra) };
+    }
+    function normalizarBancoDeDados(dados) {
+        let normalizado = {};
+        Object.keys(dados || {}).forEach(nomeOriginal => {
+            let nomePasta = limparNomeVisivel(nomeOriginal, '');
+            if (!nomePasta) return;
+            let musicas = Array.isArray(dados[nomeOriginal]) ? dados[nomeOriginal] : [];
+            normalizado[nomePasta] = musicas.filter(m => m && typeof m === 'object').map((m, i) => normalizarMusica(m, `Musica ${i + 1}`));
+        });
+        if (!Array.isArray(normalizado["Importados"])) normalizado["Importados"] = [];
+        return normalizado;
+    }
+    function sortAlfanumerico(a, b) { return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }); }
+    function escaparHTML(texto) { return String(texto == null ? '' : texto).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function escaparAtributo(texto) { return String(texto).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function sanitizarValorCSS(propriedade, valor) {
+        let v = String(valor || '').trim();
+        if (!v || /[<>]/.test(v) || /url\s*\(|expression\s*\(|javascript:/i.test(v)) return '';
+        if (propriedade === 'font-size') return /^(?:\d+(?:\.\d+)?(?:px|em|rem|%)|xx-small|x-small|small|medium|large|x-large|xx-large)$/i.test(v) ? v : '';
+        if (propriedade === 'font-weight') return /^(?:normal|bold|bolder|lighter|[1-9]00)$/i.test(v) ? v : '';
+        if (propriedade === 'font-style') return /^(?:normal|italic|oblique)$/i.test(v) ? v : '';
+        if (propriedade === 'text-decoration') return /^(?:none|underline|line-through|overline)(?:\s+(?:none|underline|line-through|overline))*$/i.test(v) ? v : '';
+        if (propriedade === 'color' || propriedade === 'background-color') return /^(?:#[0-9a-f]{3,8}|rgba?\([0-9.,\s%]+\)|hsla?\([0-9.,\s%]+\)|[a-z][a-z0-9-]*)$/i.test(v) ? v : '';
+        return '';
+    }
+    function sanitizarEstilo(style) {
+        return String(style || '').split(';').map(parte => {
+            let idx = parte.indexOf(':');
+            if (idx === -1) return '';
+            let propriedade = parte.slice(0, idx).trim().toLowerCase();
+            if (!propriedadesCSSPermitidas.has(propriedade)) return '';
+            let valor = sanitizarValorCSS(propriedade, parte.slice(idx + 1));
+            return valor ? `${propriedade}: ${valor}` : '';
+        }).filter(Boolean).join('; ');
+    }
+    function serializarAtributos(el) {
+        let tag = el.tagName.toLowerCase();
+        let atributos = [];
+        let estilo = sanitizarEstilo(el.getAttribute('style'));
+        if (estilo) atributos.push(` style="${escaparAtributo(estilo)}"`);
+        if (tag === 'font') {
+            let cor = sanitizarValorCSS('color', el.getAttribute('color'));
+            if (cor) atributos.push(` color="${escaparAtributo(cor)}"`);
+        }
+        return atributos.join('');
+    }
+    function envolverComFormatacao(html, formatacoes) { return formatacoes.reduceRight((conteudo, item) => `<${item.tag}${item.attrs}>${conteudo}</${item.tag}>`, html); }
+    function adicionarTextoComoTokens(tokens, texto, formatacoes) {
+        let limpo = texto.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\r\n?/g, '\n');
+        limpo.split('\n').forEach((parte, index) => {
+            if (index > 0) tokens.push({ tipo: 'quebra', origem: 'texto' });
+            if (parte !== '') tokens.push({ tipo: 'texto', html: envolverComFormatacao(escaparHTML(parte), formatacoes) });
+        });
+    }
+    function adicionarQuebra(tokens, origem) { tokens.push({ tipo: 'quebra', origem }); }
+    function processarNoParaTokens(no, tokens, formatacoes) {
+        if (no.nodeType === Node.TEXT_NODE) { adicionarTextoComoTokens(tokens, no.nodeValue || '', formatacoes); return; }
+        if (no.nodeType !== Node.ELEMENT_NODE) return;
+        let tag = no.tagName.toLowerCase();
+        if (tag === 'br') return adicionarQuebra(tokens, 'br');
+        if (tagsDescartadas.has(tag)) return;
+        if (tag === 'b' && no.classList.contains('acorde')) { no.childNodes.forEach(f => processarNoParaTokens(f, tokens, formatacoes)); return; }
+        if (tagsBloco.has(tag)) {
+            if (tokens.length > 0 && tokens[tokens.length - 1].tipo !== 'quebra') adicionarQuebra(tokens, 'bloco');
+            let inicio = tokens.length;
+            no.childNodes.forEach(f => processarNoParaTokens(f, tokens, formatacoes));
+            if (tokens.length === inicio) adicionarQuebra(tokens, 'br');
+            else if (tokens[tokens.length - 1].tipo !== 'quebra') adicionarQuebra(tokens, 'bloco');
+            return;
+        }
+        if (!tagsInlinePermitidas.has(tag)) { no.childNodes.forEach(f => processarNoParaTokens(f, tokens, formatacoes)); return; }
+        let novaFormatacao = formatacoes.concat([{ tag, attrs: serializarAtributos(no) }]);
+        no.childNodes.forEach(f => processarNoParaTokens(f, tokens, novaFormatacao));
+    }
+    function normalizarHTMLParaLinhas(html) {
+        let container = document.createElement('div');
+        container.innerHTML = html || '';
+        let tokens = [];
+        container.childNodes.forEach(no => processarNoParaTokens(no, tokens, []));
+        while (tokens.length > 0 && tokens[tokens.length - 1].tipo === 'quebra' && tokens[tokens.length - 1].origem === 'bloco') tokens.pop();
+        if (tokens.length === 0) return [''];
+        let linhas = [''];
+        tokens.forEach(token => {
+            if (token.tipo === 'quebra') linhas.push('');
+            else linhas[linhas.length - 1] += token.html;
+        });
+        return linhas;
+    }
+    function sanitizarHTMLCifra(html) { return normalizarHTMLParaLinhas(html).join('<br>'); }
+    function prepararHTMLParaEdicao(html) { return sanitizarHTMLCifra(html); }
+    function textoPuroDaLinha(linha) {
+        let temp = document.createElement('div');
+        temp.innerHTML = linha;
+        return (temp.textContent || '').replace(/\u00a0/g, ' ');
+    }
+    function normalizarEspacamentoHifensEmTexto(texto) {
+        let textoLimpo = texto.replace(/\u00a0/g, ' ');
+        let inicio = (textoLimpo.match(/^\s*/) || [''])[0];
+        let corpo = textoLimpo.slice(inicio.length).trim();
+        if (!corpo.includes('-')) return textoLimpo;
+        corpo = corpo.replace(/\s*-\s*/g, ' - ').replace(/[ \t\f\v]+/g, ' ').trim();
+        return inicio + corpo;
+    }
+    function analisarLinhaDeCifra(linha) {
+        let texto = textoPuroDaLinha(linha);
+        let temHifen = texto.includes('-');
+        let textoParaValidar = temHifen ? normalizarEspacamentoHifensEmTexto(texto) : texto;
+        let palavras = textoParaValidar.trim().split(/\s+/).filter(p => p !== '');
+        return { texto, textoNormalizado: textoParaValidar, palavras, temHifen, ehCifra: palavras.length > 0 && palavras.every(validarPalavraCifra) };
+    }
+    function validarPalavraCifra(p) {
+        let texto = p.replace(/^[\[\(]+|[\]\)]+$/g, '').trim();
+        if (texto === '') return false;
+        if (/^[-|:,/]+$/.test(texto)) return true;
+        let semTag = texto.replace(regexTags, '');
+        if (semTag === '') return true;
+        return regexAcordeExato.test(semTag);
+    }
+    function extrairAcordeDaPalavra(p) {
+        let limpa = p.replace(/^[\[\(]+|[\]\)]+$/g, '');
+        let tagMatch = limpa.match(regexTags);
+        if (tagMatch) limpa = limpa.substring(tagMatch[0].length);
+        if (limpa && regexAcordeExato.test(limpa)) return limpa;
+        return null;
+    }
+    function salvarNoNavegador() {
+        // Desativado para usar apenas o backup.json na nuvem
+        return;
+    }
+    function atualizarIndiceEdicao() {
+        let musicas = bancoDeDados[contextoEdicao.pasta];
+        if (!musicas) return;
+        contextoEdicao.indexEdicao = musicas.findIndex(m => m.titulo === contextoEdicao.musicaTitulo);
+    }
+    function alterarFonte(delta) {
+        ajusteManualFonte += delta;
+        if (ajusteManualFonte > 0) ajusteManualFonte = 0;
+        if (ajusteManualFonte < FONTE_MINIMA - FONTE_MAXIMA) ajusteManualFonte = FONTE_MINIMA - FONTE_MAXIMA;
+        ajustarFonteAutomaticamente();
+    }
+    function obterElementoCifraAtivo() {
+        let editor = document.getElementById('editor-visual');
+        let vis = document.getElementById('visualizador-cifra');
+        return editor.style.display !== 'none' ? editor : vis;
+    }
+    function aplicarTamanhoFonte(tamanho) {
+        document.getElementById('editor-visual').style.fontSize = tamanho + "px";
+        document.getElementById('visualizador-cifra').style.fontSize = tamanho + "px";
+    }
+    function medirMaiorFonteSemQuebra(elemento) {
+        if (!elemento || elemento.clientWidth <= 0) return tamanhoFonte;
+        if (!(elemento.textContent || '').trim()) return 16;
+        let fonteAnterior = elemento.style.fontSize;
+        let melhorTamanho = FONTE_MINIMA;
+        for (let tamanho = FONTE_MAXIMA; tamanho >= FONTE_MINIMA; tamanho--) {
+            elemento.style.fontSize = tamanho + "px";
+            if (elemento.scrollWidth <= elemento.clientWidth + 1) { melhorTamanho = tamanho; break; }
+        }
+        elemento.style.fontSize = fonteAnterior;
+        return melhorTamanho;
+    }
+    function ajustarFonteAutomaticamente(resetarAjuste = false) {
+        if (resetarAjuste) ajusteManualFonte = 0;
+        let elemento = obterElementoCifraAtivo();
+        if (!elemento || elemento.clientWidth <= 0) return;
+        let tamanhoIdeal = medirMaiorFonteSemQuebra(elemento);
+        tamanhoFonte = Math.max(FONTE_MINIMA, Math.min(FONTE_MAXIMA, tamanhoIdeal + ajusteManualFonte));
+        aplicarTamanhoFonte(tamanhoFonte);
+    }
+    function criarContainerDeLinha(linha) {
+        let container = document.createElement('span');
+        container.innerHTML = linha || '';
+        return container;
+    }
+    function coletarNosTexto(container) {
+        let runs = [];
+        let texto = '';
+        let walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+        let no;
+        while ((no = walker.nextNode())) {
+            let conteudo = no.nodeValue || '';
+            let textoNormalizado = conteudo.replace(/\u00a0/g, ' ');
+            let inicio = texto.length;
+            texto += textoNormalizado;
+            runs.push({ node: no, texto: textoNormalizado, inicio, fim: texto.length });
+        }
+        return { runs, texto };
+    }
+    function obterSegmentosTexto(texto) {
+        let segmentos = [];
+        let regex = /\S+|\s+/g;
+        let match;
+        while ((match = regex.exec(texto))) {
+            segmentos.push({ texto: match[0], inicio: match.index, fim: regex.lastIndex, espaco: /^\s+$/.test(match[0]) });
+        }
+        return  segmentos;
+    }
+    function localizarPosicaoTexto(container, indice) {
+        let walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+        let no; let posicao = 0; let ultimoNo = null;
+        while ((no = walker.nextNode())) {
+            let tamanho = (no.nodeValue || '').length;
+            if (indice <= posicao + tamanho) return { node: no, offset: Math.max(0, indice - posicao) };
+            posicao += tamanho; ultimoNo = no;
+        }
+        if (ultimoNo) return { node: ultimoNo, offset: (ultimoNo.nodeValue || '').length };
+        let novoNo = document.createTextNode(''); container.appendChild(novoNo); return { node: novoNo, offset: 0 };
+    }
+    function envolverIntervaloTexto(container, inicio, fim, acorde) {
+        if (fim <= inicio) return;
+        let inicioRange = localizarPosicaoTexto(container, inicio);
+        let fimRange = localizarPosicaoTexto(container, fim);
+        let range = document.createRange();
+        range.setStart(inicioRange.node, inicioRange.offset);
+        range.setEnd(fimRange.node, fimRange.offset);
+        let wrapper = document.createElement('b');
+        wrapper.className = 'acorde'; wrapper.setAttribute('data-nota', acorde);
+        wrapper.appendChild(range.extractContents());
+        range.insertNode(wrapper);
+    }
+    function linhaContemHTML(linha) { return /<[^>]+>/.test(linha || ''); }
+    function criarOperacoesTransposicao(texto, diferenca, ignorarAlinhamento = false) {
+        let operacoes = []; let pendente = 0;
+        obterSegmentosTexto(texto).forEach(seg => {
+            if (seg.espaco) {
+                if (!ignorarAlinhamento) {
+                    if (pendente > 0) {
+                        let remover = Math.min(pendente, seg.texto.length);
+                        if (remover === seg.texto.length && remover > 0) remover -= 1;
+                        if (remover > 0) { operacoes.push({ inicio: seg.inicio, fim: seg.inicio + remover, texto: '' }); pendente -= remover; }
+                    }
+                    if (pendente < 0) { operacoes.push({ inicio: seg.inicio, fim: seg.inicio, texto: ' '.repeat(Math.abs(pendente)) }); pendente = 0; }
+                }
+                return;
+            }
+            let ac = extrairAcordeDaPalavra(seg.texto);
+            if (!ac) return;
+            let idx = seg.texto.lastIndexOf(ac);
+            if (idx === -1) return;
+            let dAcorde = 0;
+            localizarRaizesDoAcorde(ac, diferenca).forEach(r => {
+                if (r.textoNovo === r.textoOriginal) return;
+                operacoes.push({ inicio: seg.inicio + idx + r.inicio, fim: seg.inicio + idx + r.fim, texto: r.textoNovo });
+                dAcorde += r.delta;
+            });
+            if (!ignorarAlinhamento) pendente += dAcorde;
+        });
+        return operacoes;
+    }
+    function transporLinhaDeAcordes(linha, diferenca, infoLinha) {
+        let info = infoLinha || analisarLinhaDeCifra(linha);
+        let container = criarContainerDeLinha(info.temHifen && !linhaContemHTML(linha) ? escaparHTML(info.textoNormalizado) : linha);
+        let { runs, texto } = coletarNosTexto(container);
+       
+        let operacoes = criarOperacoesTransposicao(texto, diferenca, info.temHifen).sort((a, b) => b.inicio - a.inicio || b.fim - a.fim);
+       
+        runs.forEach(run => {
+            let ops = operacoes.filter(op => (op.inicio === op.fim && op.inicio >= run.inicio && op.inicio < run.fim) || (op.inicio === op.fim && op.inicio === run.fim && run === runs[runs.length - 1]) || (op.inicio < run.fim && op.fim > run.inicio));
+            if (ops.length === 0) return;
+            let txt = run.texto;
+            ops.forEach(op => {
+                let ini = Math.max(0, op.inicio - run.inicio), fim = Math.min(run.texto.length, op.fim - run.inicio);
+                let ins = !op.aplicado ? (op.aplicado = true, op.texto) : '';
+                txt = txt.slice(0, ini) + ins + txt.slice(fim);
+            });
+            run.node.nodeValue = txt;
+        });
+        return container.innerHTML;
+    }
+    function formatarLinhaDeAcordes(linha) {
+        let container = criarContainerDeLinha(linha);
+        let { texto } = coletarNosTexto(container);
+        let intervalos = [];
+        obterSegmentosTexto(texto).forEach(segmento => {
+            if (segmento.espaco) return;
+            let acorde = extrairAcordeDaPalavra(segmento.texto);
+            if (!acorde) return;
+            let idx = segmento.texto.lastIndexOf(acorde);
+            if (idx === -1) return;
+            intervalos.push({ inicio: segmento.inicio + idx, fim: segmento.inicio + idx + acorde.length, acorde });
+        });
+        intervalos.sort((a, b) => b.inicio - a.inicio).forEach(i => envolverIntervaloTexto(container, i.inicio, i.fim, i.acorde));
+        return container.innerHTML;
+    }
+    function formatarCifraVisual(html) {
+        return normalizarHTMLParaLinhas(html).map(linha => {
+            let infoLinha = analisarLinhaDeCifra(linha);
+            if (infoLinha.palavras.length === 0) return linha;
+            if (infoLinha.ehCifra && infoLinha.temHifen) return formatarLinhaDeAcordes(linhaContemHTML(linha) ? linha : escaparHTML(infoLinha.textoNormalizado));
+            if (infoLinha.ehCifra) return formatarLinhaDeAcordes(linha);
+            return linha;
+        }).join('<br>');
+    }
+    function editarCifra() {
+        tomOriginal = null;
+        document.getElementById('visualizador-cifra').style.display = 'none';
+        document.getElementById('toolbar-editor').style.display = 'flex';
+        let editor = document.getElementById('editor-visual');
+        editor.innerHTML = prepararHTMLParaEdicao(editor.innerHTML);
+        editor.style.display = 'block';
+        editor.focus();
+        setTimeout(() => ajustarFonteAutomaticamente(true), 50);
+        document.getElementById('btn-salvar-cifra').style.display = 'block';
+    }
+    function abrirModalTom() { document.getElementById('modal-tom').style.display = 'flex'; }
+    function normalizarNota(nota) {
+        const equivalentes = { 'DB': 'C#', 'EB': 'D#', 'GB': 'F#', 'AB': 'G#', 'BB': 'A#' };
+        return equivalentes[nota.toUpperCase()] || nota.toUpperCase();
+    }
+    function descobrirTomDaMusica(html) {
+        for (let linha of normalizarHTMLParaLinhas(html)) {
+            let info = analisarLinhaDeCifra(linha);
+            let mTom = info.textoNormalizado.trim().match(/^tom:\s*([A-G][b#]?)/i);
+            if (mTom) return normalizarNota(mTom[1]);
+            if (info.ehCifra) {
+                for (let p of info.palavras) {
+                    let ac = extrairAcordeDaPalavra(p);
+                    if (ac) { let mAc = ac.match(/^([A-G][b#]?)/i); if (mAc) return normalizarNota(mAc[1]); }
+                }
+            }
+        }
+        return null;
+    }
+    function transporNotaRaiz(raiz, diferenca) {
+        let index = notasEscala.indexOf(normalizarNota(raiz));
+        return index === -1 ? raiz : notasEscala[(index + diferenca + 120) % 12];
+    }
+    function localizarRaizesDoAcorde(acorde, diferenca) {
+        let raizes = []; let deslocamento = 0;
+        acorde.split('/').forEach(parte => {
+            let m = parte.match(/^([A-G][b#]?)/i);
+            if (m) {
+                let novo = transporNotaRaiz(m[1], diferenca);
+                raizes.push({ inicio: deslocamento, fim: deslocamento + m[1].length, textoOriginal: m[1], textoNovo: novo, delta: novo.length - m[1].length });
+            }
+            deslocamento += parte.length + 1;
+        });
+        return raizes;
+    }
+    function aplicarTransposicao(notaDestino) {
+        let editor = document.getElementById('editor-visual');
+        if (!tomOriginal) tomOriginal = descobrirTomDaMusica(editor.innerHTML);
+        if (!tomOriginal) return alert("Não foi possível identificar acordes na música para transpor.");
+        let diferenca = notasEscala.indexOf(notaDestino) - notasEscala.indexOf(tomOriginal);
+        if (diferenca !== 0) {
+            let htmlFinal = formatarCifraVisual(normalizarHTMLParaLinhas(editor.innerHTML).map(l => {
+                let i = analisarLinhaDeCifra(l); return i.ehCifra ? transporLinhaDeAcordes(l, diferenca, i) : l;
+            }).join('<br>'));
+            editor.innerHTML = prepararHTMLParaEdicao(htmlFinal);
+            document.getElementById('visualizador-cifra').innerHTML = htmlFinal;
+            tomOriginal = notaDestino;
+            setTimeout(() => ajustarFonteAutomaticamente(), 50);
+        }
+        fecharModal('modal-tom');
+    }
+    function trocarTela(idDaTela) { aplicarTelaVisual(idDaTela); }
+    function abrirPasta(nome) { aplicarPastaVisual(nome); }
+    function abrirMusica(pasta, index) { aplicarMusicaVisual(pasta, index); }
+    renderizarPastas();
+    
+    aplicarTelaVisual('tela-inicial');
+    function aplicarTelaVisual(idDaTela) {
+        document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
+        document.getElementById(idDaTela).style.display = 'block';
+        document.getElementById('header-acoes-padrao').style.display = idDaTela === 'tela-editor-cifra' ? 'none' : 'flex';
+        document.getElementById('header-acoes-editor').style.display = idDaTela === 'tela-editor-cifra' ? 'flex' : 'none';
+        if (idDaTela === 'tela-inicial') renderizarPastas();
+        if (idDaTela === 'pesquisa') {
+            document.getElementById('input-pesquisa').value = "";
+            document.getElementById('resultado-pesquisa').innerHTML = "";
+            setTimeout(() => document.getElementById('input-pesquisa').focus(), 100);
+        }
+    }
+    function aplicarPastaVisual(nomeDaPasta) {
+        let container = document.getElementById('lista-musicas-container');
+        document.getElementById('titulo-pasta-atual').innerText = nomeDaPasta;
+        container.innerHTML = "";
+        let musicas = bancoDeDados[nomeDaPasta] || [];
+        if (musicas.length === 0) container.innerHTML = "<p style='text-align: center; color: var(--text-muted);'>Pasta vazia.</p>";
+        musicas.forEach((m, i) => {
+            let divMusica = document.createElement('div');
+            divMusica.className = 'item-lista';
+            divMusica.onclick = function() { abrirMusica(nomeDaPasta, i); };
+
+            // Descobre o tom diretamente da cifra salva na música
+            let tom = descobrirTomDaMusica(m.letra);
+            let tagTom = tom ? `<div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;"><span style="border: 1px solid var(--border-color); padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 11px; background: rgba(255, 255, 255, 0.03);">◇ ${tom}</span></div>` : '';
+
+            divMusica.innerHTML = `
+                <div class="item-lista-esquerda">
+                    <div style="background: rgba(59, 130, 246, 0.12); width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(59, 130, 246, 0.25);">
+                        <i class="fa-solid fa-music" style="font-size: 20px; color: #3b82f6; filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 16px; color: var(--text-main);">${escaparHTML(m.titulo)}</div>
+                        ${tagTom}
+                    </div>
+                </div>
+            `;
+
+            let iconeOpcoes = document.createElement('span');
+            iconeOpcoes.className = 'icone-opcoes';
+            iconeOpcoes.innerHTML = '<i class="fa-solid fa-ellipsis-vertical"></i>';
+            iconeOpcoes.onclick = function(event) { event.stopPropagation(); abrirOpcoes('musica', nomeDaPasta, i); };
+            divMusica.appendChild(iconeOpcoes);
+            container.appendChild(divMusica);
+        });
+        aplicarTelaVisual('tela-musicas-pasta');
+    }
+    function aplicarMusicaVisual(nomeDaPasta, index) {
+        let musica = bancoDeDados[nomeDaPasta][index];
+        contextoEdicao = { pasta: nomeDaPasta, musicaTitulo: musica.titulo, indexEdicao: index };
+        tomOriginal = null;
+        let htmlFormatado = normalizarHTMLSalvo(musica.letra);
+        musica.letra = htmlFormatado;
+        let editor = document.getElementById('editor-visual');
+        let vis = document.getElementById('visualizador-cifra');
+        editor.innerHTML = prepararHTMLParaEdicao(htmlFormatado);
+        vis.innerHTML = htmlFormatado;
+        editor.style.display = 'none';
+        document.getElementById('toolbar-editor').style.display = 'none';
+        document.getElementById('btn-salvar-cifra').style.display = 'none';
+        vis.style.display = 'block';
+        aplicarTelaVisual('tela-editor-cifra');
+        setTimeout(() => ajustarFonteAutomaticamente(true), 50);
+    }
+    function voltarDoEditor() {
+        if (contextoEdicao.indexEdicao === -1) trocarTela('selecao-criacao-pasta');
+        else abrirPasta(contextoEdicao.pasta);
+    }
+    function prepararCriacao(tipo) {
+        if (tipo === 'existente') {
+            let pastas = Object.keys(bancoDeDados).filter(p => p !== "Importados").sort(sortAlfanumerico);
+            if (pastas.length === 0) return alert("Crie uma nova pasta primeiro.");
+            document.getElementById('select-pasta-existente').innerHTML = pastas.map(p => `<option value="${escaparAtributo(p)}">${escaparHTML(p)}</option>`).join('');
+            document.getElementById('div-nome-pasta').style.display = 'none';
+            document.getElementById('div-select-pasta').style.display = 'flex';
+        } else {
+            document.getElementById('div-nome-pasta').style.display = 'flex';
+            document.getElementById('div-select-pasta').style.display = 'none';
+        }
+        document.getElementById('input-nome-pasta').value = ""; document.getElementById('input-nome-musica').value = "";
+        trocarTela('tela-criar-pasta');
+    }
+    function iniciarEditor() {
+        let ehNova = document.getElementById('div-nome-pasta').style.display === 'flex';
+        let nomePasta = ehNova ? document.getElementById('input-nome-pasta').value.trim() : document.getElementById('select-pasta-existente').value;
+        let nomeMusica = document.getElementById('input-nome-musica').value.trim();
+        if (!nomePasta || !nomeMusica) return alert("Preencha todos os campos!");
+        if (ehNova && nomePasta.toLowerCase() === "importados") return alert("Nome reservado.");
+        if (bancoDeDados[nomePasta] && bancoDeDados[nomePasta].some(m => m.titulo.toLowerCase() === nomeMusica.toLowerCase())) return alert("Música já existe!");
+        contextoEdicao = { pasta: nomePasta, musicaTitulo: nomeMusica, indexEdicao: -1 };
+        tomOriginal = null;
+        let editor = document.getElementById('editor-visual');
+        editor.innerHTML = "";
+       
+        document.getElementById('visualizador-cifra').style.display = 'none';
+        editor.style.display = 'block';
+        document.getElementById('toolbar-editor').style.display = 'flex';
+        document.getElementById('btn-salvar-cifra').style.display = 'block';
+       
+        aplicarTelaVisual('tela-editor-cifra');
+        setTimeout(() => { ajustarFonteAutomaticamente(true); editor.focus(); }, 50);
+    }
+    function salvarCifra() {
+        let editor = document.getElementById('editor-visual');
+        let htmlFormatado = normalizarHTMLSalvo(editor.innerHTML);
+        let pasta = contextoEdicao.pasta;
+       
+        if (!bancoDeDados[pasta]) bancoDeDados[pasta] = [];
+        let novaMusica = { titulo: contextoEdicao.musicaTitulo, letra: htmlFormatado };
+        if (contextoEdicao.indexEdicao === -1) bancoDeDados[pasta].push(novaMusica);
+        else bancoDeDados[pasta][contextoEdicao.indexEdicao] = novaMusica;
+        salvarNoNavegador();
+        atualizarIndiceEdicao();
+        let vis = document.getElementById('visualizador-cifra');
+        vis.innerHTML = htmlFormatado;
+        editor.innerHTML = prepararHTMLParaEdicao(htmlFormatado);
+        editor.style.display = 'none';
+        document.getElementById('toolbar-editor').style.display = 'none';
+        document.getElementById('btn-salvar-cifra').style.display = 'none';
+        vis.style.display = 'block';
+        tomOriginal = descobrirTomDaMusica(htmlFormatado);
+        setTimeout(() => ajustarFonteAutomaticamente(true), 50);
+        alert("Salvo com sucesso!");
+    }
+    function renderizarPastas() {
+        let container = document.getElementById('lista-pastas-container'); container.innerHTML = "";
+        // Pega todas as pastas e já remove a "Importados"
+        let pastas = Object.keys(bancoDeDados).sort(sortAlfanumerico).filter(n => n !== "Importados");
+
+        let totalMusicas = 0;
+        pastas.forEach(p => totalMusicas += (bancoDeDados[p] || []).length);
+        
+        let elPastas = document.getElementById('contador-pastas');
+        if (elPastas) elPastas.innerText = pastas.length;
+        
+        let elMusicas = document.getElementById('contador-musicas');
+        if (elMusicas) elMusicas.innerText = totalMusicas;
+
+        pastas.forEach(nome => {
+            if (!Array.isArray(bancoDeDados[nome])) bancoDeDados[nome] = [];
+            let div = document.createElement('div'); div.className = 'item-lista';
+            div.onclick = function() { abrirPasta(nome); };
+            
+            div.innerHTML = `
+                <div class="item-lista-esquerda">
+                    <div style="background: rgba(255, 255, 255, 0.06); width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                        <i class="fa-solid fa-folder" style="font-size: 32px; color: #fbbf24;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 16px;">${escaparHTML(nome)}</div>
+                        <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;"><i class="fa-solid fa-music" style="color: #818cf8; font-size: 11px;"></i> ${bancoDeDados[nome].length} música(s)</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span class="icone-opcoes" onclick="event.stopPropagation(); abrirOpcoes('pasta', '${nome}', -1)"><i class="fa-solid fa-ellipsis-vertical"></i></span>
+                    <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 14px;"></i>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+    function realizarPesquisa() {
+        let termo = document.getElementById('input-pesquisa').value.toLowerCase().trim();
+        let container = document.getElementById('resultado-pesquisa'); container.innerHTML = "";
+        if (!termo) return;
+        let achou = 0;
+        for (let p in bancoDeDados) {
+            if (p.toLowerCase().includes(termo)) {
+                achou++; let d = document.createElement('div'); d.className = 'item-lista'; d.onclick = () => abrirPasta(p);
+                d.innerHTML = `<div class="item-lista-esquerda"><span style="color: #fbbf24;"><i class="fa-solid fa-folder"></i></span> <span style="font-weight: 600;">${escaparHTML(p)}</span></div>`; container.appendChild(d);
+            }
+            bancoDeDados[p].forEach((m, i) => {
+                if (m.titulo.toLowerCase().includes(termo)) {
+                    achou++; let d = document.createElement('div'); d.className = 'item-lista'; d.onclick = () => abrirMusica(p, i);
+                    d.innerHTML = `<div class="item-lista-esquerda"><span style="color: var(--text-muted);"><i class="fa-solid fa-music"></i></span> <div><div style="font-weight: 500;">${escaparHTML(m.titulo)}</div><div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Em: ${escaparHTML(p)}</div></div></div>`; container.appendChild(d);
+                }
+            });
+        }
+        if (achou === 0) container.innerHTML = "<p style='text-align: center; color: var(--text-muted);'>Nenhum resultado.</p>";
+    }
+    function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
+    function abrirMenuPrincipal() { document.getElementById('modal-menu-principal').style.display = 'flex'; }
+    function abrirOpcoes(tipo, pasta, index) {
+        contextoExportacao = { tipo, pasta, indexMusica: index };
+        document.getElementById('titulo-modal').innerText = "Opções: \n" + (tipo === 'pasta' ? pasta : bancoDeDados[pasta][index].titulo);
+        let [ex, rn, mv, cp] = ['btn-excluir', 'btn-renomear', 'btn-mover', 'btn-copiar'].map(id => document.getElementById(id));
+        if (tipo === 'pasta') {
+            mv.style.display = cp.style.display = 'none';
+            ex.style.display = rn.style.display = pasta === "Importados" ? 'none' : 'block';
+        } else {
+            mv.style.display = cp.style.display = ex.style.display = rn.style.display = 'block';
+        }
+        document.getElementById('modal-opcoes').style.display = 'flex';
+    }
+    function excluirItem() {
+        fecharModal('modal-opcoes');
+        if (contextoExportacao.tipo === 'pasta') {
+            if (confirm(`Excluir pasta "${contextoExportacao.pasta}"?`)) { delete bancoDeDados[contextoExportacao.pasta]; salvarNoNavegador(); renderizarPastas(); }
+        } else {
+            if (confirm("Excluir música?")) { bancoDeDados[contextoExportacao.pasta].splice(contextoExportacao.indexMusica, 1); salvarNoNavegador(); aplicarPastaVisual(contextoExportacao.pasta); }
+        }
+    }
+    function renomearItem() {
+        fecharModal('modal-opcoes');
+        if (contextoExportacao.tipo === 'pasta') {
+            let novoNome = prompt("Novo nome:", contextoExportacao.pasta);
+            if (!novoNome || novoNome.trim() === "" || novoNome === contextoExportacao.pasta) return;
+            novoNome = novoNome.trim();
+            if (novoNome.toLowerCase() === "importados") return alert("Nome reservado.");
+            if (Object.keys(bancoDeDados).some(p => p.toLowerCase() === novoNome.toLowerCase())) return alert("Já existe!");
+            bancoDeDados[novoNome] = bancoDeDados[contextoExportacao.pasta];
+            delete bancoDeDados[contextoExportacao.pasta];
+            salvarNoNavegador();
+            aplicarPastaVisual(novoNome);
+        } else {
+            let musica = bancoDeDados[contextoExportacao.pasta][contextoExportacao.indexMusica];
+            let novoNome = prompt("Novo nome:", musica.titulo);
+            if (!novoNome || novoNome.trim() === "" || novoNome === musica.titulo) return;
+            novoNome = novoNome.trim();
+            if (bancoDeDados[contextoExportacao.pasta].some((m, i) => m.titulo.toLowerCase() === novoNome.toLowerCase() && i !== contextoExportacao.indexMusica)) return alert("Já existe!");
+            musica.titulo = novoNome;
+            salvarNoNavegador();
+            aplicarPastaVisual(contextoExportacao.pasta);
+        }
+    }
+    function abrirModalTransferencia(modo) {
+        fecharModal('modal-opcoes'); modoTransferencia = modo;
+        let sel = document.getElementById('select-pasta-destino'); sel.innerHTML = "";
+        let pastas = Object.keys(bancoDeDados).sort(sortAlfanumerico).filter(p => p !== contextoExportacao.pasta);
+        if (pastas.length === 0) return alert("Não há outras pastas.");
+        pastas.forEach(p => sel.appendChild(new Option(p, p)));
+        document.getElementById('titulo-modal-transferencia').innerText = modo === 'mover' ? 'Mover' : 'Copiar';
+        document.getElementById('btn-confirmar-transferencia').innerHTML = modo === 'mover' ? '<i class="fa-solid fa-arrows-up-down-left-right"></i> Mover' : '<i class="fa-solid fa-copy"></i> Copiar';
+        document.getElementById('modal-transferir').style.display = 'flex';
+    }
+    function confirmarTransferencia() {
+        let dest = document.getElementById('select-pasta-destino').value;
+        let origem = bancoDeDados[contextoExportacao.pasta][contextoExportacao.indexMusica];
+        if (bancoDeDados[dest].some(m => m.titulo.toLowerCase() === origem.titulo.toLowerCase())) return alert("Já existe!");
+        bancoDeDados[dest].push(JSON.parse(JSON.stringify(origem)));
+        if (modoTransferencia === 'mover') bancoDeDados[contextoExportacao.pasta].splice(contextoExportacao.indexMusica, 1);
+        salvarNoNavegador(); fecharModal('modal-transferir'); aplicarPastaVisual(contextoExportacao.pasta); alert("Sucesso!");
+    }
+    function baixarArquivo() {
+        let dados = {}, nome = "";
+        if (contextoExportacao.tipo === 'pasta') {
+            dados = { formatoCifrasApp: "pasta", nomePasta: contextoExportacao.pasta, musicas: bancoDeDados[contextoExportacao.pasta] };
+            nome = nomeArquivoSeguro(contextoExportacao.pasta, "Pasta") + "_Backup_Cifras.json";
+        } else {
+            let m = bancoDeDados[contextoExportacao.pasta][contextoExportacao.indexMusica];
+            dados = { formatoCifrasApp: "musicaUnica", musica: m };
+            nome = nomeArquivoSeguro(m.titulo, "Musica") + "_Cifra.json";
+        }
+        let url = URL.createObjectURL(new Blob([JSON.stringify(dados, null, 2)], { type: "application/json" }));
+        let a = document.createElement("a"); a.href = url; a.download = nome; a.click(); URL.revokeObjectURL(url); fecharModal('modal-opcoes');
+    }
+    function exportarTudo() {
+        let url = URL.createObjectURL(new Blob([JSON.stringify({ formatoCifrasApp: "tudo", banco: bancoDeDados }, null, 2)], { type: "application/json" }));
+        let a = document.createElement("a"); a.href = url; a.download = "Backup_Completo_Cifras.json"; a.click(); URL.revokeObjectURL(url); fecharModal('modal-menu-principal');
+    }
+    function iniciarImportacao() { fecharModal('modal-menu-principal'); document.getElementById('input-importar').click(); }
+    function processarImportacao(event) {
+        let arquivo = event.target.files[0]; if (!arquivo) return;
+        let leitor = new FileReader();
+        leitor.onload = function(e) {
+            try {
+                let imp = JSON.parse(e.target.result);
+                if (imp.formatoCifrasApp === "tudo") {
+                    if (!confirm("Isso apagará as cifras atuais e carregará o backup. Continuar?")) { event.target.value = ''; return; }
+                    bancoDeDados = normalizarBancoDeDados(imp.banco);
+                } else if (imp.formatoCifrasApp === "musicaUnica") {
+                    let m = normalizarMusica(imp.musica, "Musica importada"), c = 1, t = m.titulo;
+                    while (bancoDeDados["Importados"].some(x => x.titulo === t)) t = m.titulo + ` (${c++})`;
+                    m.titulo = t; bancoDeDados["Importados"].push(m);
+                } else if (imp.formatoCifrasApp === "pasta") {
+                    let nome = limparNomeVisivel(imp.nomePasta, "Importados") === "Importados" ? "Importados (Backup)" : limparNomeVisivel(imp.nomePasta, "Importados");
+                    if (!bancoDeDados[nome]) bancoDeDados[nome] = [];
+                    (Array.isArray(imp.musicas) ? imp.musicas : []).forEach((m, i) => {
+                        let obj = normalizarMusica(m, `Musica ${i + 1}`);
+                        if (!bancoDeDados[nome].some(x => x.titulo === obj.titulo)) bancoDeDados[nome].push(obj);
+                    });
+                } else return alert("Formato inválido.");
+                salvarNoNavegador(); renderizarPastas(); alert("Sucesso!");
+            } catch (erro) { alert("Arquivo inválido."); }
+        };
+        leitor.readAsText(arquivo); event.target.value = '';
+    }
+    function obterHTMLSeguroDaAreaDeTransferencia(event) {
+        let dados = event.clipboardData || window.clipboardData; if (!dados) return '';
+        let html = dados.getData('text/html'); if (html) return prepararHTMLParaEdicao(html);
+        return escaparHTML(dados.getData('text/plain')).replace(/\r\n?|\n/g, '<br>');
+    }
+    document.getElementById('editor-visual').addEventListener('paste', function(e) {
+        let html = obterHTMLSeguroDaAreaDeTransferencia(e);
+        if (html) { e.preventDefault(); document.execCommand('insertHTML', false, html); tomOriginal = null; setTimeout(() => ajustarFonteAutomaticamente(), 50); }
+    });
+    document.getElementById('editor-visual').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); document.execCommand('insertLineBreak', false, null); tomOriginal = null; setTimeout(() => ajustarFonteAutomaticamente(), 50); }
+    });
+    document.getElementById('editor-visual').addEventListener('input', function() { tomOriginal = null; ajustarFonteAutomaticamente(); });
+    window.addEventListener('resize', function() { ajustarFonteAutomaticamente(); });
+    window.addEventListener('orientationchange', function() { setTimeout(() => ajustarFonteAutomaticamente(), 250); });
+   
+    async function carregarCifrasAutomaticas() {
+        try {
+            const resposta = await fetch('backup.json?v=' + new Date().getTime());
+            if (!resposta.ok) return;
+            const dados = await resposta.json();
+            
+            if (dados && dados.banco) {
+                const bancoNovo = JSON.stringify(dados.banco);
+                let bancoAtualNormalizado = "";
+                const bancoAtual = localStorage.getItem('appCifras');
+                if (bancoAtual) {
+                    try {
+                        bancoAtualNormalizado = JSON.stringify(JSON.parse(bancoAtual));
+                    } catch (e) {
+                        bancoAtualNormalizado = "";
+                    }
+                }
+                // Se houver atualização no backup.json ou se o banco local estiver vazio
+                if (bancoAtualNormalizado !== bancoNovo || Object.keys(bancoDeDados).length === 0) {
+                    localStorage.setItem('appCifras', bancoNovo);
+                    bancoDeDados = normalizarBancoDeDados(dados.banco);
+                    renderizarPastas();
+                }
+            }
+        } catch (erro) {
+            console.error('Erro ao carregar o backup:', erro);
+        }
+    }
+    document.addEventListener('DOMContentLoaded', carregarCifrasAutomaticas);
+    </script>
+</body>
+</html>

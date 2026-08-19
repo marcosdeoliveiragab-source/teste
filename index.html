@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baixar Áudio</title>
+</head>
+<body>
+
+    <h2>Baixar Áudio</h2>
+    <input type="text" id="link" placeholder="Link do vídeo">
+    <button onclick="baixar()">Baixar</button>
+
+    <script>
+    function baixar() {
+        let url = document.getElementById('link').value;
+        // Troque SEU_LINK_AQUI pelo link que o Render gerou
+        let servidor = "https://SEU_LINK_AQUI.onrender.com/baixar?url=";
+        window.location.href = servidor + url;
+    }
+    </script>
+
+</body>
+</html>

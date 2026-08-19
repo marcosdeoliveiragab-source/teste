@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Admin - Gestão Completa</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .abas-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 10px;
+    }
+    .btn-aba {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      background: #f3f4f6;
+      color: #4b5563;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-aba.ativa {
+      background: #3b82f6;
+      color: #ffffff;
+    }
+    .drop-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 25px;
+      text-align: center;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .drop-zone:hover {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+    .grid-tons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 768px) {
+      .grid-tons { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Tela de Login -->
+  <div id="telaLogin" style="display: flex; align-items: center; justify-content: center; height: 100vh;">
+    <div class="modal-box" style="width: 100%;">
+      <span class="material-icons-round" style="font-size: 48px; color: #3b82f6; margin-bottom: 10px;">lock</span>
+      <h3>Acesso Admin</h3>
+      <p>Área restrita de gestão</p>
+      <input type="password" id="inputSenha" class="input-moderno" placeholder="Senha" onkeydown="tratarTeclaEnter(event)">
+      <button onclick="autenticar()" class="btn btn-primary" style="width: 100%; justify-content: center;">Entrar</button>
+      <br><br>
+      <a href="index.html" style="font-size: 13px; color: #6b7280; text-decoration: none;">← Voltar para o Site</a>
+    </div>
+  </div>
+
+  <!-- Conteúdo Admin -->
+  <div id="conteudoAdmin" style="display: none;">
+    
+    <header class="navbar">
+      <div class="nav-left">
+        <div class="brand">
+          <div class="logo-icon" style="background: #fef3c7; color: #d97706;">
+            <span class="material-icons-round">admin_panel_settings</span>
+          </div>
+          <div class="brand-text">
+            <h1>Painel Admin</h1>
+            <span>Gestão de Repertório, Mídia e Pads</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <a href="index.html" class="btn"><span class="material-icons-round" style="font-size: 18px;">home</span> Ver Site</a>
+        <button onclick="sairAdmin()" class="btn"><span class="material-icons-round" style="font-size: 18px;">logout</span> Sair</button>
+      </div>
+    </header>
+
+    <div class="container" style="max-width: 1100px;">
+      
+      <!-- Abas de Navegação Principal -->
+      <div class="abas-container">
+        <button class="btn-aba ativa" id="tabBtnCifras" onclick="mudarAba('cifras')">
+          <span class="material-icons-round">library_music</span> Repertório (Cifras)
+        </button>
+        <button class="btn-aba" id="tabBtnPads" onclick="mudarAba('pads')">
+          <span class="material-icons-round">graphic_eq</span> Pads / Áudios
+        </button>
+        <button class="btn-aba" id="tabBtnGaleria" onclick="mudarAba('galeria')">
+          <span class="material-icons-round">perm_media</span> Galeria (Mídia)
+        </button>
+        <div style="margin-left: auto;">
+          <button onclick="baixarBackup()" class="btn btn-primary"><span class="material-icons-round" style="font-size: 18px;">download</span> Salvar Backup</button>
+        </div>
+      </div>
+
+      <div class="admin-layout">
+        <!-- Barra Lateral -->
+        <aside class="sidebar-admin">
+          <button id="btnNovaPasta" onclick="criarPasta()" class="btn btn-success" style="width: 100%; justify-content: center; margin-bottom: 10px;">
+            <span class="material-icons-round" style="font-size: 18px;">add</span> Nova Pasta
+          </button>
+          
+          <div class="search-container" style="margin-bottom: 15px; padding: 8px 12px;">
+            <span class="material-icons-round" style="font-size: 20px;">search</span>
+            <input type="text" id="buscaAdmin" placeholder="Buscar..." oninput="renderizarNavegacao()">
+          </div>
+
+          <div id="listaNavegacao">Carregando...</div>
+        </aside>
+
+        <!-- Área de Edição Principal -->
+        <main class="painel-edicao" id="painelEdicao">
+          <div style="text-align: center; color: #9ca3af; padding: 50px 0;">
+            <span class="material-icons-round" style="font-size: 64px;">edit_document</span>
+            <p>Selecione um item ao lado para editar.</p>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SENHA_CORRETA = '10022006';
+    let dadosApp = { cifras: [], galeria: [], pads: [] };
+    let abaAtual = 'cifras';
+    let pastaSelecionada = null;
+    let itemSelecionado = null; 
+    let pastasExpandidas = new Set();
+    const NOTAS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+    function verificarAutenticacao() {
+      if (sessionStorage.getItem('adminAutenticado') === 'true') {
+        document.getElementById('telaLogin').style.display = 'none';
+        document.getElementById('conteudoAdmin').style.display = 'block';
+        carregarDadosAdmin();
+      }
+    }
+
+    function autenticar() {
+      const senhaDigitada = document.getElementById('inputSenha').value;
+      if (senhaDigitada === SENHA_CORRETA) {
+        sessionStorage.setItem('adminAutenticado', 'true');
+        document.getElementById('telaLogin').style.display = 'none';
+        document.getElementById('conteudoAdmin').style.display = 'block';
+        carregarDadosAdmin();
+      } else {
+        alert('Senha incorreta!');
+        document.getElementById('inputSenha').value = '';
+      }
+    }
+
+    function tratarTeclaEnter(event) { if (event.key === 'Enter') autenticar(); }
+    function sairAdmin() { sessionStorage.removeItem('adminAutenticado'); window.location.reload(); }
+
+    async function carregarDadosAdmin() {
+      const salvo = localStorage.getItem('dadosCifras');
+      if (salvo) {
+        processarDadosCarregados(JSON.parse(salvo));
+      } else {
+        try {
+          const resposta = await fetch('backup.json');
+          const json = await resposta.json();
+          processarDadosCarregados(json);
+        } catch (erro) {
+          dadosApp = { cifras: [], galeria: [], pads: [] };
+          renderizarNavegacao();
+        }
+      }
+    }
+
+    function processarDadosCarregados(json) {
+      // Ajuste de segurança caso venha de backup antigo
+      let padsCarregados = json.pads || [];
+      
+      // Conversão automática caso existam pastas de pads do código anterior
+      padsCarregados = padsCarregados.map(p => {
+        if (p.itens) {
+          return { id: 'pad_' + Date.now() + Math.random(), nome: p.nome, links: {} };
+        }
+        if (!p.links) p.links = {};
+        return p;
+      });
+
+      if (Array.isArray(json)) {
+        dadosApp = {
+          cifras: json.map(p => ({ nome: p.nome, musicas: p.musicas || [] })),
+          galeria: json.filter(p => (p.videos && p.videos.length > 0) || (p.fotos && p.fotos.length > 0)).map(p => ({
+            nome: p.nome + ' (Mídia)',
+            videos: p.videos || [],
+            fotos: p.fotos || []
+          })),
+          pads: []
+        };
+      } else {
+        dadosApp = {
+          cifras: json.cifras || [],
+          galeria: json.galeria || [],
+          pads: padsCarregados
+        };
+      }
+      salvarLocal();
+      renderizarNavegacao();
+    }
+
+    function salvarLocal() { 
+      localStorage.setItem('dadosCifras', JSON.stringify(dadosApp, null, 2)); 
+    }
+
+    function baixarBackup() {
+      salvarLocal();
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dadosApp, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "backup.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function mudarAba(aba) {
+      abaAtual = aba;
+      pastaSelecionada = null;
+      itemSelecionado = null;
+      pastasExpandidas.clear();
+
+      document.getElementById('tabBtnCifras').className = `btn-aba ${aba === 'cifras' ? 'ativa' : ''}`;
+      document.getElementById('tabBtnGaleria').className = `btn-aba ${aba === 'galeria' ? 'ativa' : ''}`;
+      document.getElementById('tabBtnPads').className = `btn-aba ${aba === 'pads' ? 'ativa' : ''}`;
+      
+      let btnTexto = '+ Nova Pasta de Cifras';
+      if(aba === 'galeria') btnTexto = '+ Novo Álbum de Mídia';
+      if(aba === 'pads') btnTexto = '+ Adicionar Novo Pad'; // Alterado para Pad Direto
+      document.getElementById('btnNovaPasta').innerHTML = `<span class="material-icons-round" style="font-size: 18px;">add</span> ${btnTexto}`;
+
+      renderizarNavegacao();
+      document.getElementById('painelEdicao').innerHTML = '<p style="text-align:center; color:#9ca3af; padding:50px">Selecione um item ao lado para editar.</p>';
+    }
+
+    function togglePasta(pIdx) {
+      if (pastasExpandidas.has(pIdx)) pastasExpandidas.delete(pIdx);
+      else pastasExpandidas.add(pIdx);
+      renderizarNavegacao();
+    }
+
+    function renderizarNavegacao() {
+      const nav = document.getElementById('listaNavegacao');
+      const termoBusca = document.getElementById('buscaAdmin')?.value.toLowerCase() || '';
+      let html = '';
+      const listaAtiva = dadosApp[abaAtual] || [];
+
+      listaAtiva.forEach((pasta, pIdx) => {
+        const estaAberta = pastasExpandidas.has(pIdx) || termoBusca.length > 0;
+        const iconeSeta = estaAberta ? 'expand_more' : 'chevron_right';
+
+        if (abaAtual === 'cifras') {
+          if (!pasta.musicas) pasta.musicas = [];
+          const matchPasta = pasta.nome.toLowerCase().includes(termoBusca);
+          const musicasFiltradas = pasta.musicas.filter(m => m.titulo.toLowerCase().includes(termoBusca));
+          if (termoBusca && !matchPasta && musicasFiltradas.length === 0) return;
+
+          html += `
+            <div class="pasta-admin-item">
+              <div class="pasta-admin-header" style="cursor: pointer; user-select: none;" onclick="togglePasta(${pIdx})">
+                <span style="display: flex; align-items: center; gap: 5px;">
+                  <span class="material-icons-round" style="color: #9ca3af; font-size:20px">${iconeSeta}</span>
+                  <span class="material-icons-round" style="color: #ca8a04; font-size:18px">folder</span> 
+                  ${pasta.nome}
+                </span>
+                <div style="display:flex; gap: 5px;" onclick="event.stopPropagation()">
+                  <button onclick="editarPasta(${pIdx})" class="icon-btn" title="Renomear"><span class="material-icons-round" style="font-size:16px;">edit</span></button>
+                  <button onclick="excluirPasta(${pIdx})" class="icon-btn" title="Excluir"><span class="material-icons-round" style="font-size:16px; color:#ef4444">delete</span></button>
+                </div>
+              </div>
+              <div style="display: ${estaAberta ? 'block' : 'none'}; margin-top: 10px; padding-left: 10px; border-left: 2px solid #e5e7eb; margin-left: 10px;">
+                ${pasta.musicas.map(m => {
+                  const ativa = (itemSelecionado && itemSelecionado.tipo === 'musica' && itemSelecionado.id === m.id) ? 'ativa' : '';
+                  return `<div class="musica-admin-item ${ativa}" onclick="selecionarMusica(${pIdx}, '${m.id}')">
+                    <span style="display:flex; align-items:center; gap:5px;"><span class="material-icons-round" style="font-size:14px; color: #6b7280;">music_note</span> ${m.titulo}</span>
+                  </div>`;
+                }).join('')}
+                <button onclick="criarMusica(${pIdx})" class="btn" style="font-size: 11px; margin: 4px 0 8px 0; width: 100%; justify-content: center; padding: 3px; background: #f3f4f6;">+ Música</button>
+              </div>
+            </div>`;
+
+        } else if (abaAtual === 'pads') {
+          // Lógica simplificada: Pads são diretos na raiz, sem sub-músicas
+          const matchPasta = pasta.nome.toLowerCase().includes(termoBusca);
+          if (termoBusca && !matchPasta) return;
+          const ativa = (itemSelecionado && itemSelecionado.tipo === 'pad' && itemSelecionado.id === pasta.id) ? 'ativa' : '';
+
+          html += `
+            <div class="musica-admin-item ${ativa}" style="margin-bottom: 5px;" onclick="selecionarPad(${pIdx})">
+              <span style="display: flex; align-items: center; gap: 5px; flex-grow: 1;">
+                <span class="material-icons-round" style="color: #8b5cf6; font-size:18px">graphic_eq</span> 
+                ${pasta.nome}
+              </span>
+              <div style="display:flex; gap: 5px;" onclick="event.stopPropagation()">
+                <button onclick="excluirPasta(${pIdx})" class="icon-btn" title="Excluir Pad"><span class="material-icons-round" style="font-size:16px; color:#ef4444">delete</span></button>
+              </div>
+            </div>`;
+
+        } else {
+          // Lógica de Galeria (inalterada)
+          if (!pasta.videos) pasta.videos = [];
+          if (!pasta.fotos) pasta.fotos = [];
+          const matchPasta = pasta.nome.toLowerCase().includes(termoBusca);
+          if (termoBusca && !matchPasta) return;
+
+          html += `
+            <div class="pasta-admin-item">
+              <div class="pasta-admin-header" style="cursor: pointer; user-select: none;" onclick="togglePasta(${pIdx})">
+                <span style="display: flex; align-items: center; gap: 5px;">
+                  <span class="material-icons-round" style="color: #9ca3af; font-size:20px">${iconeSeta}</span>
+                  <span class="material-icons-round" style="color: #10b981; font-size:18px">perm_media</span> 
+                  ${pasta.nome}
+                </span>
+                <div style="display:flex; gap: 5px;" onclick="event.stopPropagation()">
+                  <button onclick="editarPasta(${pIdx})" class="icon-btn" title="Renomear"><span class="material-icons-round" style="font-size:16px;">edit</span></button>
+                  <button onclick="excluirPasta(${pIdx})" class="icon-btn" title="Excluir"><span class="material-icons-round" style="font-size:16px; color:#ef4444">delete</span></button>
+                </div>
+              </div>
+              <div style="display: ${estaAberta ? 'block' : 'none'}; margin-top: 10px; padding-left: 10px; border-left: 2px solid #e5e7eb; margin-left: 10px;">
+                <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; margin: 6px 0;">Vídeos</div>
+                ${pasta.videos.map(v => {
+                  const ativa = (itemSelecionado && itemSelecionado.tipo === 'video' && itemSelecionado.id === v.id) ? 'ativa' : '';
+                  return `<div class="musica-admin-item ${ativa}" onclick="selecionarVideo(${pIdx}, '${v.id}')">
+                    <span style="display:flex; align-items:center; gap:5px;"><span class="material-icons-round" style="font-size:14px; color: #0284c7;">videocam</span> ${v.titulo}</span>
+                  </div>`;
+                }).join('')}
+                <button onclick="adicionarVideo(${pIdx})" class="btn" style="font-size: 11px; margin: 4px 0 8px 0; width: 100%; justify-content: center; padding: 3px; background: #f3f4f6;">+ Vídeo</button>
+
+                <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; margin: 6px 0;">Fotos</div>
+                ${pasta.fotos.map(f => {
+                  const ativa = (itemSelecionado && itemSelecionado.tipo === 'foto' && itemSelecionado.id === f.id) ? 'ativa' : '';
+                  return `<div class="musica-admin-item ${ativa}" onclick="selecionarFoto(${pIdx}, '${f.id}')">
+                    <span style="display:flex; align-items:center; gap:5px;"><span class="material-icons-round" style="font-size:14px; color: #10b981;">image</span> Foto</span>
+                  </div>`;
+                }).join('')}
+                <button onclick="adicionarFoto(${pIdx})" class="btn" style="font-size: 11px; margin: 4px 0 4px 0; width: 100%; justify-content: center; padding: 3px; background: #f3f4f6;">+ Foto</button>
+              </div>
+            </div>`;
+        }
+      });
+
+      nav.innerHTML = html || '<p style="text-align:center; color:#9ca3af; font-size: 14px; padding: 20px;">Nenhum item encontrado.</p>';
+    }
+
+    function criarPasta() {
+      let msg = 'Nome da nova pasta:';
+      if(abaAtual === 'cifras') msg = 'Nome da nova pasta de cifras:';
+      if(abaAtual === 'galeria') msg = 'Nome do novo álbum de mídia:';
+      if(abaAtual === 'pads') msg = 'Nome do novo Pad (Ex: Oceans, Worship, etc):';
+      
+      const nome = prompt(msg);
+      if (nome && nome.trim()) {
+        if (abaAtual === 'cifras') {
+          dadosApp.cifras.push({ nome: nome.trim(), musicas: [] });
+        } else if (abaAtual === 'pads') {
+          // Cria o Pad com a estrutura limpa de chaves/valores para os tons
+          const novoPad = { id: 'pad_' + Date.now(), nome: nome.trim(), links: {} };
+          NOTAS.forEach(n => novoPad.links[n] = '');
+          dadosApp.pads.push(novoPad);
+        } else {
+          dadosApp.galeria.push({ nome: nome.trim(), videos: [], fotos: [] });
+        }
+        salvarLocal(); 
+        renderizarNavegacao();
+        
+        // Se for Pad, já abre para edição direto
+        if(abaAtual === 'pads') {
+          selecionarPad(dadosApp.pads.length - 1);
+        }
+      }
+    }
+
+    function editarPasta(pIdx) {
+      const lista = dadosApp[abaAtual];
+      const novoNome = prompt('Novo nome:', lista[pIdx].nome);
+      if (novoNome && novoNome.trim()) {
+        lista[pIdx].nome = novoNome.trim();
+        salvarLocal(); 
+        renderizarNavegacao();
+        // Atualizar painel de edição se estiver aberto
+        if (abaAtual === 'pads' && itemSelecionado && itemSelecionado.id === lista[pIdx].id) {
+          document.getElementById('editPadNome').value = novoNome.trim();
+        }
+      }
+    }
+
+    function excluirPasta(pIdx) {
+      const lista = dadosApp[abaAtual];
+      const tipoLabel = abaAtual === 'pads' ? 'Pad' : 'Pasta';
+      if (confirm(`Deseja excluir "${lista[pIdx].nome}"?`)) {
+        lista.splice(pIdx, 1);
+        itemSelecionado = null;
+        salvarLocal(); 
+        renderizarNavegacao();
+        document.getElementById('painelEdicao').innerHTML = '<p style="text-align:center; color:#9ca3af; padding:50px">Selecione um item ao lado para editar.</p>';
+      }
+    }
+
+    // --- FUNÇÕES DE CIFRAS ---
+    function criarMusica(pIdx) {
+      const titulo = prompt('Título da música:');
+      if (titulo && titulo.trim()) {
+        const nova = { id: 'm_' + Date.now(), titulo: titulo.trim(), tom: 'C', conteudo: 'Cole a cifra aqui...' };
+        dadosApp.cifras[pIdx].musicas.push(nova);
+        pastasExpandidas.add(pIdx);
+        salvarLocal(); renderizarNavegacao();
+        selecionarMusica(pIdx, nova.id);
+      }
+    }
+
+    function selecionarMusica(pIdx, mId) {
+      pastaSelecionada = pIdx;
+      itemSelecionado = { tipo: 'musica', id: mId };
+      renderizarNavegacao();
+      const musica = dadosApp.cifras[pIdx].musicas.find(m => m.id === mId);
+      if (!musica) return;
+
+      const opcoesTom = NOTAS.map(n => `<option value="${n}" ${musica.tom === n ? 'selected' : ''}>${n}</option>`).join('');
+
+      document.getElementById('painelEdicao').innerHTML = `
+        <h3 style="margin-bottom: 20px; color: #111827;">Editando Música</h3>
+        <div style="margin-bottom: 15px;">
+          <label style="display:block; font-weight: 500; margin-bottom: 5px; color:#4b5563;">Título:</label>
+          <input type="text" id="editTitulo" class="input-moderno" value="${musica.titulo}">
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display:block; font-weight: 500; margin-bottom: 5px; color:#4b5563;">Tom:</label>
+          <select id="editTom" class="select-moderno" style="max-width: 150px;">${opcoesTom}</select>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display:block; font-weight: 500; margin-bottom: 5px; color:#4b5563;">Cifra:</label>
+          <div style="display:flex; gap:5px; margin-bottom:8px;">
+            <button type="button" class="btn" onclick="formatar('bold')"><span class="material-icons-round" style="font-size:18px">format_bold</span></button>
+            <button type="button" class="btn" onclick="formatar('italic')"><span class="material-icons-round" style="font-size:18px">format_italic</span></button>
+          </div>
+          <div id="editConteudo" class="editor-cifra" contenteditable="true"></div>
+        </div>
+        <div style="display:flex; justify-content: space-between; margin-top: 25px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+          <button onclick="salvarItem()" class="btn btn-success"><span class="material-icons-round" style="font-size:18px">save</span> Salvar Alterações</button>
+          <button onclick="excluirItem()" class="btn btn-danger"><span class="material-icons-round" style="font-size:18px">delete</span> Excluir</button>
+        </div>
+      `;
+      document.getElementById('editConteudo').innerHTML = musica.conteudo || '';
+    }
+
+    // --- NOVA LÓGICA DE PADS ---
+    function selecionarPad(pIdx) {
+      pastaSelecionada = pIdx;
+      const pad = dadosApp.pads[pIdx];
+      itemSelecionado = { tipo: 'pad', id: pad.id };
+      renderizarNavegacao();
+      
+      // Cria a estrutura visual para inserir os 12 links simultaneamente
+      let htmlTons = '';
+      NOTAS.forEach(n => {
+        const idSafe = n.replace('#', 'sharp');
+        const url = (pad.links && pad.links[n]) ? pad.links[n] : '';
+        htmlTons += `
+          <div style="display:flex; align-items:center; gap: 10px; background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb;">
+            <span style="font-weight:700; width: 35px; text-align:center; color: #8b5cf6; font-size: 16px;">${n}</span>
+            <input type="text" id="pad_link_${idSafe}" class="input-moderno" style="margin:0; flex-grow: 1; font-size:13px;" value="${url}" placeholder="Cole o link do áudio para o tom ${n} aqui...">
+          </div>
+        `;
+      });
+
+      document.getElementById('painelEdicao').innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="color: #111827; margin: 0;">Configuração do Pad</h3>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display:block; font-weight: 500; margin-bottom: 5px; color:#4b5563;">Nome do Pad (Ex: Oceans):</label>
+          <input type="text" id="editPadNome" class="input-moderno" value="${pad.nome}">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="display:block; font-weight: 500; margin-bottom: 10px; color:#4b5563;">Links dos Áudios por Tom:</label>
+          <div class="grid-tons">
+            ${htmlTons}
+          </div>
+          <p style="font-size: 12px; color: #6b7280; margin-top: 10px;">Dica: Você não precisa preencher todos os tons se não for usar. Preencha apenas os que possui os links.</p>
+        </div>
+        
+        <div style="display:flex; justify-content: space-between; margin-top: 25px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+          <button onclick="salvarItem()" class="btn btn-success"><span class="material-icons-round" style="font-size:18px">save</span> Salvar Alterações</button>
+        </div>
+      `;
+    }
+
+    // --- FUNÇÕES DE MÍDIA (VÍDEOS E FOTOS) ---
+    function adicionarVideo(pIdx) {
+      const titulo = prompt('Título do Vídeo:');
+      if (!titulo || !titulo.trim()) return;
+      const url = prompt('Cole o link do YouTube ou do Google Drive:');
+      if (!url) return;
+
+      const novo = { id: 'v_' + Date.now(), titulo: titulo.trim(), url: url.trim() };
+      dadosApp.galeria[pIdx].videos.push(novo);
+      pastasExpandidas.add(pIdx);
+      salvarLocal();
+      renderizarNavegacao();
+      selecionarVideo(pIdx, novo.id);
+    }
+
+    function selecionarVideo(pIdx, vId) {
+      pastaSelecionada = pIdx;
+      itemSelecionado = { tipo: 'video', id: vId };
+      renderizarNavegacao();
+      const video = dadosApp.galeria[pIdx].videos.find(v => v.id === vId);
+      if (!video) return;
+
+      document.getElementById('painelEdicao').innerHTML = `
+        <h3 style="margin-bottom: 20px; color: #111827;">Editando Vídeo</h3>
+        <div style="margin-bottom: 15px;">
+          <label style="display:block; font-weight: 500; margin-bottom: 5px; color:#4b5563;">Título do Vídeo:</label>
+          <input type="text" id="editVideoTitulo" class="input-moderno" value="${video.titulo}">
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display:block; font-weight: 500; margin-bottom: 5px; color:#4b5563;">Link do YouTube ou Google Drive:</label>
+          <input type="text" id="editVideoUrl" class="input-moderno" value="${video.url}" placeholder="Cole o link do YouTube ou Drive aqui">
+        </div>
+        <div style="display:flex; justify-content: space-between; margin-top: 25px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+          <button onclick="salvarItem()" class="btn btn-success"><span class="material-icons-round" style="font-size:18px">save</span> Salvar Alterações</button>
+          <button onclick="excluirItem()" class="btn btn-danger"><span class="material-icons-round" style="font-size:18px">delete</span> Excluir Vídeo</button>
+        </div>
+      `;
+    }
+
+    function adicionarFoto(pIdx) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = event => {
+          const novo = { id: 'f_' + Date.now(), url: event.target.result };
+          dadosApp.galeria[pIdx].fotos.push(novo);
+          pastasExpandidas.add(pIdx);
+          salvarLocal();
+          renderizarNavegacao();
+          selecionarFoto(pIdx, novo.id);
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    }
+
+    function selecionarFoto(pIdx, fId) {
+      pastaSelecionada = pIdx;
+      itemSelecionado = { tipo: 'foto', id: fId };
+      renderizarNavegacao();
+      const foto = dadosApp.galeria[pIdx].fotos.find(f => f.id === fId);
+      if (!foto) return;
+
+      document.getElementById('painelEdicao').innerHTML = `
+        <h3 style="margin-bottom: 20px; color: #111827;">Editando Foto</h3>
+        <div style="margin-bottom: 15px;">
+          <label style="display:block; font-weight: 500; margin-bottom: 5px; color:#4b5563;">Trocar Imagem:</label>
+          <div class="drop-zone" onclick="document.getElementById('inputFileFoto').click()" ondragover="event.preventDefault()" ondrop="tratarDropFoto(event)">
+            <span class="material-icons-round" style="font-size:36px; color:#10b981;">image</span>
+            <p style="margin: 8px 0 0 0; font-size:14px; color:#4b5563;">Clique para escolher nova foto ou arraste aqui</p>
+          </div>
+          <input type="file" id="inputFileFoto" accept="image/*" style="display:none" onchange="carregarFotoInput(this)">
+          <input type="hidden" id="editFotoUrl" value="${foto.url}">
+        </div>
+        <div style="margin-bottom: 15px; text-align: center; background: #f3f4f6; padding: 10px; border-radius: 8px;">
+          <img id="previewFoto" src="${foto.url}" style="max-height: 220px; max-width: 100%; border-radius: 4px; object-fit: contain;">
+        </div>
+        <div style="display:flex; justify-content: space-between; margin-top: 25px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+          <button onclick="salvarItem()" class="btn btn-success"><span class="material-icons-round" style="font-size:18px">save</span> Salvar Alterações</button>
+          <button onclick="excluirItem()" class="btn btn-danger"><span class="material-icons-round" style="font-size:18px">delete</span> Excluir Foto</button>
+        </div>
+      `;
+    }
+
+    function carregarFotoInput(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('editFotoUrl').value = e.target.result;
+        document.getElementById('previewFoto').src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function tratarDropFoto(e) {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = evt => {
+        document.getElementById('editFotoUrl').value = evt.target.result;
+        document.getElementById('previewFoto').src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function formatar(comando) {
+      document.execCommand(comando, false, null);
+      document.getElementById('editConteudo')?.focus();
+    }
+
+    // --- SALVAR E EXCLUIR GENÉRICO ---
+    function salvarItem() {
+      if (!itemSelecionado) return;
+
+      if (abaAtual === 'cifras') {
+        const pasta = dadosApp.cifras[pastaSelecionada];
+        if (itemSelecionado.tipo === 'musica') {
+          const m = pasta.musicas.find(x => x.id === itemSelecionado.id);
+          if (m) {
+            m.titulo = document.getElementById('editTitulo').value.trim();
+            m.tom = document.getElementById('editTom').value;
+            m.conteudo = document.getElementById('editConteudo').innerHTML;
+          }
+        }
+      } else if (abaAtual === 'pads') {
+        // Nova Lógica de Pads: salva todos os 12 campos simultaneamente
+        const p = dadosApp.pads[pastaSelecionada];
+        p.nome = document.getElementById('editPadNome').value.trim();
+        if(!p.links) p.links = {};
+        
+        NOTAS.forEach(n => {
+          const idSafe = n.replace('#', 'sharp');
+          p.links[n] = document.getElementById('pad_link_' + idSafe).value.trim();
+        });
+      } else if (abaAtual === 'galeria') {
+        const pasta = dadosApp.galeria[pastaSelecionada];
+        if (itemSelecionado.tipo === 'video') {
+          const v = pasta.videos.find(x => x.id === itemSelecionado.id);
+          if (v) {
+            v.titulo = document.getElementById('editVideoTitulo').value.trim();
+            v.url = document.getElementById('editVideoUrl').value.trim();
+          }
+        } else if (itemSelecionado.tipo === 'foto') {
+          const f = pasta.fotos.find(x => x.id === itemSelecionado.id);
+          if (f) {
+            f.url = document.getElementById('editFotoUrl').value;
+          }
+        }
+      }
+
+      salvarLocal();
+      renderizarNavegacao();
+      
+      const btn = document.querySelector('.btn-success');
+      const textOrigin = btn.innerHTML;
+      btn.innerHTML = '<span class="material-icons-round" style="font-size:18px">check</span> Salvo!';
+      setTimeout(() => { btn.innerHTML = textOrigin; }, 2000);
+    }
+
+    function excluirItem() {
+      if (!itemSelecionado) return;
+
+      if (confirm('Deseja realmente excluir este item?')) {
+        if (abaAtual === 'cifras') {
+          const pasta = dadosApp.cifras[pastaSelecionada];
+          if (itemSelecionado.tipo === 'musica') {
+            pasta.musicas = pasta.musicas.filter(x => x.id !== itemSelecionado.id);
+          }
+        } else if (abaAtual === 'galeria') {
+          const pasta = dadosApp.galeria[pastaSelecionada];
+          if (itemSelecionado.tipo === 'video') {
+            pasta.videos = pasta.videos.filter(x => x.id !== itemSelecionado.id);
+          } else if (itemSelecionado.tipo === 'foto') {
+            pasta.fotos = pasta.fotos.filter(x => x.id !== itemSelecionado.id);
+          }
+        }
+
+        itemSelecionado = null;
+        salvarLocal();
+        renderizarNavegacao();
+        document.getElementById('painelEdicao').innerHTML = '<p style="text-align:center; color:#9ca3af; padding:50px">Selecione um item ao lado para editar.</p>';
+      }
+    }
+
+    verificarAutenticacao();
+  </script>
+</body>
+</html>

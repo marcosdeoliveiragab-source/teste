@@ -9,7 +9,7 @@ CORS(app)
 def baixar():
     url = request.args.get('url')
     opcoes = {
-    'format': 'm4a/bestaudio',
+    'format': 'bestaudio/best',
     'outtmpl': 'audio.%(ext)s',
     'cookiefile': 'cookies.txt',
     'extractor_args': {'youtube': ['player_client=android']}

@@ -8,7 +8,12 @@ CORS(app)
 @app.route('/baixar')
 def baixar():
     url = request.args.get('url')
-    opcoes = {'format': 'm4a/bestaudio', 'outtmpl': 'audio.%(ext)s', 'cookiefile': 'cookies.txt'}
+    opcoes = {
+    'format': 'm4a/bestaudio',
+    'outtmpl': 'audio.%(ext)s',
+    'cookiefile': 'cookies.txt',
+    'extractor_args': {'youtube': ['player_client=android']}
+    }
     with yt_dlp.YoutubeDL(opcoes) as ydl:
         info = ydl.extract_info(url, download=True)
         arquivo = ydl.prepare_filename(info)

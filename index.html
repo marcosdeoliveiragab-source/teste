@@ -3,21 +3,525 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baixar Áudio</title>
+    <title>Suporte Pratanet - Atendimento Automático</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: #111b21;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-app {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #0b141a;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+            position: relative;
+        }
+
+        /* Cabecalho */
+        .chat-header {
+            background-color: #202c33;
+            color: #e9edef;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #00a884, #005c4b);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .user-details h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e9edef;
+            margin-bottom: 2px;
+        }
+
+        .user-details p {
+            font-size: 13px;
+            color: #8696a0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #00a884;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        /* Area de Mensagens */
+        .chat-body {
+            flex: 1;
+            padding: 20px 10%;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            scroll-behavior: smooth;
+        }
+
+        @media (max-width: 768px) {
+            .chat-body {
+                padding: 15px 10px;
+            }
+        }
+
+        /* Baloes de Mensagem */
+        .message {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 14.5px;
+            line-height: 1.5;
+            position: relative;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.bot {
+            background-color: #202c33;
+            color: #e9edef;
+            align-self: flex-start;
+            border-top-left-radius: 0;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .message.user {
+            background-color: #005c4b;
+            color: #e9edef;
+            align-self: flex-end;
+            border-top-right-radius: 0;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #8696a0;
+            text-align: right;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .message.user .message-time {
+            color: #25d366;
+            opacity: 0.8;
+        }
+
+        /* Campo de Entrada */
+        .chat-footer {
+            background-color: #202c33;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .input-container {
+            flex: 1;
+            background-color: #2a3942;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+        }
+
+        .chat-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #e9edef;
+            font-size: 15px;
+            padding: 12px 0;
+        }
+
+        .chat-input::placeholder {
+            color: #8696a0;
+        }
+
+        .send-btn {
+            background-color: #00a884;
+            border: none;
+            outline: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            color: #ffffff;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            background-color: #008f70;
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .send-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            margin-left: 2px;
+        }
+
+        /* Indicador de digitacao */
+        .typing-indicator {
+            align-self: flex-start;
+            background-color: #202c33;
+            padding: 12px 18px;
+            border-radius: 8px;
+            border-top-left-radius: 0;
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            background-color: #8696a0;
+            border-radius: 50%;
+            animation: bounce 1.3s infinite ease-in-out;
+        }
+
+        .dot:nth-child(2) { animation-delay: 0.15s; }
+        .dot:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .chat-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-body::-webkit-scrollbar-thumb {
+            background-color: #374248;
+            border-radius: 3px;
+        }
+    </style>
 </head>
 <body>
 
-    <h2>Baixar Áudio</h2>
-    <input type="text" id="link" placeholder="Link do vídeo">
-    <button onclick="baixar()">Baixar</button>
+    <div class="chat-app">
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="header-info">
+                <div class="avatar">P</div>
+                <div class="user-details">
+                    <h2>Pratanet Suporte Técnico</h2>
+                    <p><span class="status-badge"></span>Online • Atendimento Automático</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-body" id="chatBody"></div>
+
+        <!-- Footer Input -->
+        <div class="chat-footer">
+            <div class="input-container">
+                <input type="text" id="userInput" class="chat-input" placeholder="Digite o número da opção desejada..." autocomplete="off">
+            </div>
+            <button class="send-btn" id="sendBtn" title="Enviar mensagem">
+                <svg viewBox="0 0 24 24">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
 
     <script>
-    function baixar() {
-        let url = document.getElementById('link').value;
-        let servidor = "https://teste-pfea.onrender.com/baixar?url=";
-        window.location.href = servidor + url;
-    }
-    </script>
+        const chatBody = document.getElementById('chatBody');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
 
+        let currentState = 'MAIN_MENU';
+        let invalidCount = 0;
+        let lastBotMessage = '';
+
+        // Converte sintaxe estilo WhatsApp (*texto*) em negrito <strong>
+        function parseWhatsAppFormat(text) {
+            let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            return safeText.replace(/\*(.*?)\*/g, "<strong>$1</strong>");
+        }
+
+        function getTimeString() {
+            const now = new Date();
+            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function appendMessage(text, sender, isRetry = false) {
+            const messageEl = document.createElement('div');
+            messageEl.classList.add('message', sender);
+
+            const formattedContent = parseWhatsAppFormat(text);
+            
+            messageEl.innerHTML = formattedContent + `<span class="message-time">${getTimeString()}</span>`;
+            
+            chatBody.appendChild(messageEl);
+            chatBody.scrollTop = chatBody.scrollHeight;
+
+            if (sender === 'bot' && !isRetry && currentState !== 'END') {
+                lastBotMessage = text;
+            }
+        }
+
+        function showTypingAndRespond(responseCallback) {
+            const typingEl = document.createElement('div');
+            typingEl.classList.add('typing-indicator');
+            typingEl.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+            chatBody.appendChild(typingEl);
+            chatBody.scrollTop = chatBody.scrollHeight;
+
+            setTimeout(() => {
+                typingEl.remove();
+                responseCallback();
+            }, 500);
+        }
+
+        // Mensagens do Template
+        const MSG_MAIN_MENU = `🔧 Entendido! Agora, por favor selecione o assunto técnico:
+Digite o número da opção desejada:
+
+Estamos aqui para resolver tudo rapidinho! 😊
+
+1 - Sem Conexão ❌ (Não está conseguindo acessar a internet)
+2 - Internet Lenta 🐢 (Sua conexão está funcionando, mas com lentidão)
+3 - Alterar Senha Wifi 🔐 (Precisa mudar a senha da sua rede)
+4 - Auto Desbloqueio 🔓 (Deseja desbloquear seu acesso automaticamente)
+5 - Reagendamento de Serviço 📆 (Quer remarcar um atendimento já agendado)
+6 - Instrução sobre APPs 📲 (Dificuldade com acesso aos aplicativos)
+7 - Falar com um Atendente 🗣️ (Preferir atendimento humano)
+8 - Retornar ao menu principal 🔙`;
+
+        const MSG_SEM_CONEXAO = `Olá! Seja bem-vindo(a) ao *Suporte Técnico* da *Pratanet*. Para começarmos, *selecione uma das opções abaixo:*
+
+1 - Há luz vermelha “LOS” piscando no aparelho da fibra óptica;
+2 - Equipamentos estão ligados porém sem internet;
+3 - Nome da rede Wi-fi não está aparecendo; 
+4 - Equipamentos não acende nenhuma luz; 
+5 - Nenhuma das opções acima.`;
+
+        const MSG_INTERNET_LENTA = `Olá! Seja bem-vindo(a) ao * Suporte Técnico * da * Pratanet *. Para começarmos, *selecione o dispositivo que está percebendo o problema de lentidão:* 
+
+1 - Celular
+2 - TV
+3 - Computador 
+4 - Câmeras
+5 - Todos os dispositivos do local`;
+
+        const MSG_TRANSFERENCIA_TECNICO = `Seu atendimento será transferido para um de nossos técnicos. Só um momento, por favor.`;
+        const MSG_TRANSFERENCIA_ATENDENTE = `Seu atendimento será transferido para um de nossos atendentes. Só um momento, por favor.`;
+        const MSG_TRANSFERENCIA_GERAL = `Seu atendimento está sendo transferido para um de nossos atendentes. Só um momento, por favor.`;
+        const MSG_FINALIZADO = `Quando precisar, é só retornar o contato conosco! Estamos à disposição!`;
+
+        function initChat() {
+            appendMessage(MSG_MAIN_MENU, 'bot');
+        }
+
+        function handleUserInput(input) {
+            const cleanInput = input.trim();
+            let isValid = false;
+
+            switch (currentState) {
+                case 'MAIN_MENU':
+                    if (['1', '2', '3', '4', '5', '6', '7', '8'].includes(cleanInput)) {
+                        isValid = true;
+                        if (cleanInput === '1') {
+                            currentState = 'SEM_CONEXAO_MENU';
+                            appendMessage(MSG_SEM_CONEXAO, 'bot');
+                        } else if (cleanInput === '2') {
+                            currentState = 'INTERNET_LENTA_MENU';
+                            appendMessage(MSG_INTERNET_LENTA, 'bot');
+                        } else {
+                            currentState = 'END';
+                            appendMessage(MSG_TRANSFERENCIA_ATENDENTE, 'bot');
+                        }
+                    }
+                    break;
+
+                case 'SEM_CONEXAO_MENU':
+                    if (['1', '2', '3', '4', '5'].includes(cleanInput)) {
+                        isValid = true;
+                        if (cleanInput === '1') {
+                            currentState = 'END';
+                            appendMessage(`A luz vermelha *LOS* indica que o sinal da fibra óptica não está chegando no equipamento. Seu atendimento será transferido para um de nossos técnicos. \n\nSó um momento, por favor.`, 'bot');
+                        } else if (cleanInput === '2') {
+                            currentState = 'SEM_CONEXAO_OPCAO2_CHECK';
+                            appendMessage(`Por favor, *faça esse procedimento* \n\n- Tire o roteador da tomada;\n- Deixe ele desligado por 2 minutos;\n- Em seguida, ligue o roteador e espere as luzes estabilizarem; \n- Verifique se a conexão está funcionando normalmente. \n\n*Após isso, digite:*\n1 - Problema resolvido \n2 - Problema não foi resolvido`, 'bot');
+                        } else if (cleanInput === '3') {
+                            currentState = 'END';
+                            appendMessage(`Seu atendimento será transferido para um de nossos técnicos, só um momento, por favor.`, 'bot');
+                        } else if (cleanInput === '4') {
+                            currentState = 'SEM_CONEXAO_OPCAO4_CHECK';
+                            appendMessage(`Por favor, *faça esses procedimentos:*\n \n- Verifique se o botão de liga/desliga do equipamento está pressionado;\n- Tente ligar o equipamento em outra tomada; \n- Teste ligar com outra fonte de energia. \n\n*Depois de realizar o teste, digite:* \n1 - Problema foi resolvido \n2 - Problema não foi resolvido`, 'bot');
+                        } else if (cleanInput === '5') {
+                            currentState = 'END';
+                            appendMessage(`Seu atendimento será transferido para um de nossos técnicos, só um momento, por favor.`, 'bot');
+                        }
+                    }
+                    break;
+
+                case 'SEM_CONEXAO_OPCAO2_CHECK':
+                case 'SEM_CONEXAO_OPCAO4_CHECK':
+                    if (['1', '2'].includes(cleanInput)) {
+                        isValid = true;
+                        if (cleanInput === '1') {
+                            currentState = 'CONFIRM_FINALIZAR';
+                            appendMessage(`Que bom que deu certo! Deseja seguir com o atendimento? \n\n*Digite a opção desejada:* \n1 - Finalizar atendimento \n2 - Seguir com atendimento`, 'bot');
+                        } else {
+                            currentState = 'END';
+                            appendMessage(MSG_TRANSFERENCIA_TECNICO, 'bot');
+                        }
+                    }
+                    break;
+
+                case 'INTERNET_LENTA_MENU':
+                    if (['1', '2', '3', '4', '5'].includes(cleanInput)) {
+                        isValid = true;
+                        if (cleanInput === '1') {
+                            currentState = 'LENTA_CHECK_1';
+                            appendMessage(`Por favor, reinicie o celular e em seguida, vá próximo ao roteador e veja se a conexão estará funcionando normalmente.\n\n*Depois de realizar o teste, digite:* \n1 - Problema foi resolvido \n2 - Problema não foi resolvido`, 'bot');
+                        } else if (cleanInput === '2') {
+                            currentState = 'LENTA_CHECK_2';
+                            appendMessage(`Por favor, *faça esse procedimento*: \n- Tire a TV da tomada; \n- Deixe ela desligada por 2 minutos;\n- Ligue a TV novamente e teste pra ver se está funcionando normalmente. \n\n*Após realizar o teste, digite:* \n1 - Problema foi resolvido \n2 - Problema não foi resolvido`, 'bot');
+                        } else if (cleanInput === '3') {
+                            currentState = 'LENTA_CHECK_3';
+                            appendMessage(`Por favor, *reinicie o computador* e veja se a conexão estará funcionando normalmente logo em seguida. \n\nDepois de realizar o teste, selecione: \n1 - Problema foi resolvido \n2 - Problema não foi resolvido`, 'bot');
+                        } else if (cleanInput === '4') {
+                            currentState = 'END';
+                            appendMessage(`Seu atendimento será transferido para o setor técnico. Só um momento, por favor.`, 'bot');
+                        } else if (cleanInput === '5') {
+                            currentState = 'LENTA_CHECK_5';
+                            appendMessage(`*Faça esse procedimento por favor:* \n\n- Tire o roteador da tomada;\n- Deixe ele desligado por 2 minutos;\n- Em seguida, ligue o roteador e espere as luzes estabilizarem; \n- Verifique se a conexão está funcionando normalmente. \n\n*Após isso, digite:*\n1 - Problema resolvido \n2 - Problema não foi resolvido`, 'bot');
+                        }
+                    }
+                    break;
+
+                case 'LENTA_CHECK_1':
+                case 'LENTA_CHECK_2':
+                case 'LENTA_CHECK_3':
+                case 'LENTA_CHECK_5':
+                    if (['1', '2'].includes(cleanInput)) {
+                        isValid = true;
+                        if (cleanInput === '1') {
+                            currentState = 'CONFIRM_FINALIZAR';
+                            appendMessage(`Que bom que deu certo! Deseja seguir com o atendimento? \n\n*Digite a opção desejada:*\n1 - Finalizar atendimento \n2 - Seguir com atendimento`, 'bot');
+                        } else {
+                            currentState = 'END';
+                            appendMessage(MSG_TRANSFERENCIA_TECNICO, 'bot');
+                        }
+                    }
+                    break;
+
+                case 'CONFIRM_FINALIZAR':
+                    if (['1', '2'].includes(cleanInput)) {
+                        isValid = true;
+                        if (cleanInput === '1') {
+                            currentState = 'END';
+                            appendMessage(MSG_FINALIZADO, 'bot');
+                        } else {
+                            currentState = 'END';
+                            appendMessage(MSG_TRANSFERENCIA_ATENDENTE, 'bot');
+                        }
+                    }
+                    break;
+
+                case 'END':
+                    isValid = true;
+                    appendMessage(`⚠️ Este atendimento foi finalizado ou transferido. Atualize a página para iniciar um novo atendimento.`, 'bot');
+                    break;
+            }
+
+            // Regra para Opcoes Invalidas
+            if (isValid) {
+                invalidCount = 0;
+            } else {
+                invalidCount++;
+                if (invalidCount >= 2) {
+                    currentState = 'END';
+                    appendMessage(MSG_TRANSFERENCIA_GERAL, 'bot');
+                } else {
+                    appendMessage(`⚠️ Opção não reconhecida. Por favor, selecione uma opção válida.\n\n` + lastBotMessage, 'bot', true);
+                }
+            }
+        }
+
+        function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendMessage(text, 'user');
+            userInput.value = '';
+
+            showTypingAndRespond(() => {
+                handleUserInput(text);
+            });
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        window.onload = initChat;
+    </script>
 </body>
 </html>

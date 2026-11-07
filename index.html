@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cifras - Repertório & Gestão</title>
+  
+  <!-- Fontes e Ícones -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- SDKs do Firebase (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    .container { padding-left: 12px !important; padding-right: 12px !important; }
+    #cifraConteudo { padding: 16px !important; margin-left: 0 !important; margin-right: 0 !important; }
+
+    .secao-auth-google {
+      margin-top: 25px;
+      margin-bottom: 25px;
+      padding: 20px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.035);
+    }
+    .secao-auth-google p { font-size: 13px; color: var(--muted); margin-bottom: 15px; }
+
+    .btn-google-custom {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      background: white; color: #3c4043; border: 1px solid #dadce0; border-radius: 24px;
+      padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: background-color 0.2s, box-shadow 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin: 0 auto;
+    }
+    .btn-google-custom:hover { background-color: #f8f9fa; border-color: #d2e3fc; box-shadow: 0 2px 6px rgba(60,64,67,0.15); }
+
+    .card-perfil-logado {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;
+    }
+    .avatar-usuario { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .avatar-fallback {
+      width: 52px; height: 52px; border-radius: 50%; background: #4f46e5; color: white;
+      display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold;
+      box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+    }
+
+    /* Player de Prática e PADs */
+    .player-pratica-container { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin-top: 15px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .player-acoes { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .player-botoes { display: flex; align-items: center; gap: 12px; }
+    .btn-acao-audio { background: #e2e8f0; border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #334155; cursor: pointer; transition: background 0.2s; }
+    .btn-acao-audio:hover { background: #cbd5e1; }
+    .btn-play-principal { background: #4f46e5; color: white; width: 44px; height: 44px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3); }
+    .player-timeline { display: flex; align-items: center; gap: 8px; }
+    .tempo-audio { font-size: 11px; color: #64748b; font-weight: 500; width: 38px; text-align: center; }
+
+    .modal-pad-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(4px);
+    }
+    .modal-pad-overlay.ativo { display: flex; }
+    .modal-pad-box {
+      background: white; border-radius: 16px; padding: 20px; width: 90%; max-width: 340px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: slideUpPad 0.3s ease;
+    }
+    @keyframes slideUpPad { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .grid-tons-pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 15px; }
+    .btn-tom-pad {
+      background: #f1f5f9; border: 1px solid #e2e8f0; padding: 12px 0; border-radius: 8px;
+      font-weight: bold; color: #334155; cursor: pointer; transition: 0.2s; font-size: 14px;
+    }
+    .btn-tom-pad:hover { background: #e2e8f0; }
+    .btn-tom-pad.ativo { background: #4f46e5; color: white; border-color: #4f46e5; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3); }
+    
+    .lista-pads-menu { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; max-height: 250px; overflow-y: auto; }
+    .btn-lista-pad {
+      text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 16px;
+      border-radius: 8px; font-weight: 500; color: #334155; cursor: pointer; display: flex; justify-content: space-between;
+    }
+    .btn-lista-pad:hover { background: #e2e8f0; }
+    
+    .controle-volume-pad { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
+    .pad-btn-ativo { background: #10b981 !important; color: white !important; border-color: #10b981 !important; }
+
+    .painel-editor-card {
+      background: white; border: 1px solid var(--border); border-radius: 17px;
+      padding: 20px; box-shadow: 0 4px 15px rgba(15,23,42,0.04); margin-bottom: 25px;
+    }
+    .barra-ferramentas-editor {
+      display: flex; gap: 6px; margin-bottom: 10px; background: #f8fafc; padding: 6px; border-radius: 8px; border: 1px solid #e2e8f0;
+    }
+    .input-moderno-edit {
+      width: 100%; padding: 10px 14px; border-radius: 9px; border: 1px solid #cbd5e1; font-size: 14px; outline: none; transition: all 0.2s;
+    }
+    .input-moderno-edit:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+  </style>
+</head>
+<body>
+
+  <!-- Header Navbar -->
+  <header class="navbar">
+    <div class="nav-left">
+      <button class="icon-btn" onclick="abrirModalMenu()"><span class="material-icons-round">menu</span></button>
+      <div class="brand">
+        <div class="logo-icon"><span class="material-icons-round">music_note</span></div>
+        <div class="brand-text">
+          <h1>Cifras</h1>
+          <span>Repertório & Gestão</span>
+        </div>
+      </div>
+    </div>
+    <div id="usuarioHeaderStatus" style="display: flex; align-items: center; gap: 10px;"></div>
+  </header>
+
+  <!-- Modal Menu -->
+  <div id="modalMenu" class="modal-overlay">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin: 0;">Opções</h3>
+        <button class="icon-btn" onclick="fecharModalMenu()"><span class="material-icons-round" style="color:#64748b">close</span></button>
+      </div>
+      <button class="btn btn-primary" style="width: 100%; justify-content: center; margin-bottom: 12px;" onclick="fecharModalMenu(); window.location.hash='#/galeria';">
+        <span class="material-icons-round" style="font-size: 18px;">photo_library</span> Ver Galeria de Mídia
+      </button>
+    </div>
+  </div>
+
+  <!-- Modais PAD -->
+  <div id="modalPadSelecao" class="modal-pad-overlay" onclick="fecharModaisPad(event)">
+    <div class="modal-pad-box" onclick="event.stopPropagation()">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 18px;">Escolher Pad</h3>
+        <button class="icon-btn" onclick="fecharModaisPad(true)"><span class="material-icons-round" style="color:#64748b">close</span></button>
+      </div>
+      <div class="lista-pads-menu" id="listaPadsModal"></div>
+    </div>
+  </div>
+
+  <div id="modalPadAtivo" class="modal-pad-overlay" onclick="fecharModaisPad(event)">
+    <div class="modal-pad-box" onclick="event.stopPropagation()">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 16px; color: #4f46e5; display: flex; align-items: center; gap: 5px;">
+          <span class="material-icons-round" style="font-size: 18px;">keyboard</span> <span id="nomePadAtivoUI">Pad</span>
+        </h3>
+        <button class="icon-btn" onclick="fecharModaisPad(true)"><span class="material-icons-round" style="color:#64748b">close</span></button>
+      </div>
+      <div class="grid-tons-pad" id="gridTonsPad"></div>
+      <div class="controle-volume-pad">
+        <span class="material-icons-round" style="color: #64748b;">volume_down</span>
+        <input type="range" class="slider-moderno" id="sliderVolumePad" min="0" max="1" step="0.05" value="0.5" oninput="ajustarVolumePadGlobal(this.value)" style="flex: 1;">
+        <span class="material-icons-round" style="color: #64748b;">volume_up</span>
+      </div>
+      <button class="btn" style="width: 100%; margin-top: 20px; background: #ef4444; color: white; justify-content: center;" onclick="pararPad()">
+        <span class="material-icons-round">stop</span> Parar Pad
+      </button>
+    </div>
+  </div>
+
+  <!-- Conteúdo Principal -->
+  <main class="container" id="app">
+    <p style="text-align: center; margin-top: 50px; color: #6b7280;">Carregando repertório...</p>
+  </main>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDVb0O28Q6rvRCJdbUXkpe_4S91gRhqkIQ",
+      authDomain: "sistema-cifras.firebaseapp.com",
+      projectId: "sistema-cifras",
+      storageBucket: "sistema-cifras.firebasestorage.app",
+      messagingSenderId: "768493050631",
+      appId: "1:768493050631:web:5e25b5631d04820c6d83a2"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
+    googleProvider.addScope('https://www.googleapis.com/auth/drive.file');
+
+    const NOTAS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+    let dadosApp = { cifras: [], galeria: [], pads: [] }; 
+    let dadosPessoais = { cifras: [] }; 
+    let usuarioLogado = null; 
+    let googleAccessToken = null;
+    let driveFileId = null;
+
+    function eProprietario() {
+      if (!usuarioLogado || !usuarioLogado.email) return false;
+      return usuarioLogado.email.toLowerCase() === "marcosdeoliveira.gab@gmail.com";
+    }
+
+    let tomAtual = '';
+    let conteudoOriginal = '';
+    let musicaTomOriginal = '';
+    let intervalRolagem = null;
+    let tamanhoFonteAtual = 16;
+    let termoBuscaAtual = '';
+
+    // Estado PAD
+    let audioPad1 = new Audio();
+    let audioPad2 = new Audio();
+    audioPad1.loop = true; audioPad2.loop = true;
+    let canalAtivo = 1;
+    let padGlobalVolume = 0.5;
+    let isPadPlaying = false;
+    let currentPadId = null;
+    let currentPadTom = null;
+    let fadeInterval1 = null;
+    let fadeInterval2 = null;
+
+    window.onload = function () {
+      carregarDadosGlobais();
+    };
+
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        usuarioLogado = {
+          nome: user.displayName || 'Usuário',
+          email: user.email || '',
+          foto: user.photoURL || ''
+        };
+      } else {
+        usuarioLogado = null;
+        googleAccessToken = null;
+        driveFileId = null;
+        dadosPessoais = { cifras: [] };
+      }
+      renderizarStatusUsuarioHeader();
+      navegar();
+    });
+
+    function executarLoginGoogle() {
+      auth.signInWithPopup(googleProvider).then(async (result) => {
+        if (result.credential) {
+          googleAccessToken = result.credential.accessToken;
+          sessionStorage.setItem('gToken', googleAccessToken);
+          await sincronizarComGoogleDrive(googleAccessToken);
+        }
+      }).catch((error) => {
+        alert("Erro ao tentar entrar com o Google: " + error.message);
+      });
+    }
+
+    function efetuarLogout() {
+      auth.signOut().then(() => {
+        usuarioLogado = null;
+        googleAccessToken = null;
+        driveFileId = null;
+        dadosPessoais = { cifras: [] };
+        sessionStorage.removeItem('gToken');
+        renderizarStatusUsuarioHeader();
+        navegar();
+      });
+    }
+
+    // --- GOOGLE DRIVE: CRIA PASTA VISÍVEL E ARQUIVO ---
+    async function sincronizarComGoogleDrive(token) {
+      if (!token) return;
+      try {
+        // 1. Verifica se a pasta visível "Sistema de Cifras" já existe no Drive
+        const folderRes = await fetch("https://www.googleapis.com/drive/v3/files?q=name='Sistema de Cifras' and mimeType='application/vnd.google-apps.folder' and trashed=false", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const folderData = await folderRes.json();
+        
+        let folderId;
+        if (folderData.files && folderData.files.length > 0) {
+          folderId = folderData.files[0].id;
+        } else {
+          // Cria a pasta visível "Sistema de Cifras" no Drive do usuário
+          const folderMeta = {
+            name: 'Sistema de Cifras',
+            mimeType: 'application/vnd.google-apps.folder'
+          };
+          const createFolderRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(folderMeta)
+          });
+          const newFolder = await createFolderRes.json();
+          folderId = newFolder.id;
+        }
+
+        // 2. Procura o arquivo "sistema_cifras_data.json" dentro dessa pasta
+        const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='sistema_cifras_data.json' and '${folderId}' in parents and trashed=false`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const fileData = await fileRes.json();
+
+        if (fileData.files && fileData.files.length > 0) {
+          driveFileId = fileData.files[0].id;
+          const contentRes = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (contentRes.ok) {
+            dadosPessoais = await contentRes.json();
+            if (!dadosPessoais.cifras) dadosPessoais.cifras = [];
+          }
+        } else {
+          // Cria o arquivo JSON dentro da pasta "Sistema de Cifras"
+          const metadata = {
+            name: 'sistema_cifras_data.json',
+            mimeType: 'application/json',
+            parents: [folderId]
+          };
+          const initialContent = JSON.stringify({ cifras: [] });
+          const form = new FormData();
+          form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+          form.append('file', new Blob([initialContent], { type: 'application/json' }));
+
+          const createRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: form
+          });
+          const createData = await createRes.json();
+          driveFileId = createData.id;
+          dadosPessoais = { cifras: [] };
+        }
+      } catch (err) {
+        console.error("Erro ao sincronizar com Google Drive:", err);
+      }
+      navegar();
+    }
+
+    async function salvarNoGoogleDrive() {
+      if (googleAccessToken && driveFileId) {
+        try {
+          await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+            method: 'PATCH',
+            headers: {
+              Authorization: `Bearer ${googleAccessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dadosPessoais)
+          });
+        } catch (err) {
+          console.error("Erro ao salvar no Google Drive:", err);
+        }
+      } else if (usuarioLogado) {
+        localStorage.setItem('dadosPessoais_' + auth.currentUser.uid, JSON.stringify(dadosPessoais));
+      }
+    }
+
+    function renderizarStatusUsuarioHeader() {
+      const container = document.getElementById('usuarioHeaderStatus');
+      if (usuarioLogado) {
+        const nome = usuarioLogado.nome;
+        const foto = usuarioLogado.foto;
+        const inicial = nome.charAt(0).toUpperCase();
+        
+        container.innerHTML = `
+          <div style="display:flex; align-items:center; gap:8px; color:white; font-size:12px; font-weight:600;">
+            ${foto ? `<img src="${foto}" style="width:28px; height:28px; border-radius:50%; object-fit:cover;">` : `<div style="width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-weight:bold;">${inicial}</div>`}
+            <span style="max-width:110px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${nome}</span>
+            <button onclick="efetuarLogout()" class="icon-btn" title="Sair" style="width:30px; height:30px;"><span class="material-icons-round" style="font-size:16px;">logout</span></button>
+          </div>
+        `;
+      } else {
+        container.innerHTML = '';
+      }
+    }
+
+    async function carregarDadosGlobais() {
+      const salvo = localStorage.getItem('dadosCifras');
+      if (salvo) {
+        dadosApp = JSON.parse(salvo);
+        normalizarEstruturaPads();
+        navegar();
+      } else {
+        try {
+          const timestampCache = new Date().getTime();
+          const resposta = await fetch('backup.json?nocache=' + timestampCache, { cache: 'no-store' });
+          if (resposta.ok) {
+            let json = await resposta.json();
+            processarBackup(json);
+          } else {
+            navegar();
+          }
+        } catch (e) {
+          navegar();
+        }
+      }
+    }
+
+    function processarBackup(json) {
+      if (Array.isArray(json)) {
+        dadosApp = { cifras: json, galeria: [], pads: [] };
+      } else {
+        dadosApp = {
+          cifras: json.cifras || [],
+          galeria: json.galeria || [],
+          pads: json.pads || []
+        };
+      }
+      normalizarEstruturaPads();
+      salvarDadosGlobaisLocais();
+      navegar();
+    }
+
+    function normalizarEstruturaPads() {
+      if (!dadosApp.pads) dadosApp.pads = [];
+      dadosApp.pads = dadosApp.pads.map(p => { if (!p.links) p.links = {}; return p; });
+    }
+
+    function salvarDadosGlobaisLocais() {
+      localStorage.setItem('dadosCifras', JSON.stringify(dadosApp));
+    }
+
+    // --- RENDERIZAÇÃO DA PÁGINA INICIAL ---
+    function renderizarInicio() {
+      const cA = dadosApp.cifras || [];
+      let totalMusicas = 0;
+      cA.forEach(p => totalMusicas += (p.musicas || []).length);
+
+      let htmlPastasGlobais = cA.map((p, pIdx) => {
+        return `
+          <a href="#/pasta/global/${pIdx}" class="list-card">
+            <div class="card-icon folder"><span class="material-icons-round">folder</span></div>
+            <div class="card-content">
+              <h4>${p.nome}</h4>
+              <span><span class="material-icons-round" style="font-size: 14px">music_note</span> ${(p.musicas||[]).length} música(s)</span>
+            </div>
+            <span class="material-icons-round chevron">chevron_right</span>
+          </a>
+        `;
+      }).join('');
+
+      let htmlSecaoPessoal = '';
+      if (usuarioLogado) {
+        const cP = dadosPessoais.cifras || [];
+        let totalPessoais = 0;
+        cP.forEach(p => totalPessoais += (p.musicas || []).length);
+
+        let htmlPastasPessoais = cP.map((p, pIdx) => {
+          return `
+            <a href="#/pasta/pessoal/${pIdx}" class="list-card">
+              <div class="card-icon folder" style="background:#e0e7ff; color:#4f46e5;"><span class="material-icons-round">folder_special</span></div>
+              <div class="card-content">
+                <h4>${p.nome}</h4>
+                <span><span class="material-icons-round" style="font-size: 14px">music_note</span> ${(p.musicas||[]).length} música(s)</span>
+              </div>
+              <span class="material-icons-round chevron">chevron_right</span>
+            </a>
+          `;
+        }).join('');
+
+        htmlSecaoPessoal = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:30px; margin-bottom:12px;">
+            <h3 class="secao-titulo" style="margin:0;">Suas Cifras</h3>
+            <button onclick="abrirCriarNovaPastaPessoal()" class="btn btn-primary" style="font-size:12px; padding:5px 10px;"><span class="material-icons-round" style="font-size:16px;">add</span> Nova Pasta Pessoal</button>
+          </div>
+          <div class="lista-grid" style="margin-bottom: 25px;">
+            ${htmlPastasPessoais || '<p style="color:#64748b; text-align:center; grid-column: 1/-1;">Nenhuma pasta pessoal criada ainda.</p>'}
+          </div>
+        `;
+      }
+
+      return `
+        <div class="search-container">
+          <span class="material-icons-round">search</span>
+          <input type="text" placeholder="Buscar por pasta ou música..." oninput="termoBuscaAtual=this.value.toLowerCase(); document.getElementById('listaDinamica').innerHTML=gerarHtmlBuscaGeral();">
+        </div>
+
+        <div class="stats-container">
+          <div class="stat-card">
+            <span class="material-icons-round icon-bg-folder">folder</span>
+            <div class="stat-info"><h3>${cA.length}</h3><span>Pastas Globais</span></div>
+          </div>
+          <div class="stat-card">
+            <span class="material-icons-round icon-bg-music">music_note</span>
+            <div class="stat-info"><h3>${totalMusicas}</h3><span>Músicas</span></div>
+          </div>
+        </div>
+
+        <div id="listaDinamica">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 class="secao-titulo" style="margin:0;">Pastas Públicas</h3>
+            ${eProprietario() ? `<button onclick="abrirCriarNovaPastaGlobal()" class="btn btn-primary" style="font-size:12px; padding:5px 10px;"><span class="material-icons-round" style="font-size:16px;">add</span> Nova Pasta Global</button>` : ''}
+          </div>
+
+          <div class="lista-grid" style="margin-bottom: 25px;">
+            ${htmlPastasGlobais || '<p style="color:#64748b; text-align:center; grid-column: 1/-1;">Nenhuma pasta cadastrada.</p>'}
+          </div>
+
+          <!-- SEÇÃO "SUAS CIFRAS" -->
+          ${htmlSecaoPessoal}
+
+          <!-- SEÇÃO AUTH -->
+          <div class="secao-auth-google">
+            ${!usuarioLogado ? `
+              <span class="material-icons-round" style="font-size: 36px; color: #2563eb; margin-bottom: 6px;">account_circle</span>
+              <h4 style="font-size: 15px; margin-bottom: 4px; color: #1e293b;">Área de Membros e Drive</h4>
+              <p>Faça login com sua conta do Google para gerenciar suas cifras na pasta <strong>"Sistema de Cifras"</strong> no seu Drive.</p>
+              <button onclick="executarLoginGoogle()" class="btn-google-custom">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                Fazer Login com Google
+              </button>
+            ` : `
+              <button onclick="efetuarLogout()" class="btn" style="margin: 0 auto; color: #ef4444; border-color: #fca5a5;">
+                <span class="material-icons-round">logout</span> Sair da Conta (Logout)
+              </button>
+              <div class="card-perfil-logado">
+                ${usuarioLogado.foto ? `<img src="${usuarioLogado.foto}" class="avatar-usuario">` : `<div class="avatar-fallback">${usuarioLogado.nome.charAt(0).toUpperCase()}</div>`}
+                <h4 style="font-size: 15px; color: #0f172a; margin: 0;">${usuarioLogado.nome}</h4>
+                <span style="font-size: 13px; color: #64748b;">${usuarioLogado.email}</span>
+                <span style="font-size: 11px; color: #10b981; font-weight:600; margin-top:2px;">● Pasta "Sistema de Cifras" no Drive Sincronizada</span>
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    function gerarHtmlBuscaGeral() {
+      if (!termoBuscaAtual) return renderizarInicio();
+      let resultados = [];
+
+      (dadosApp.cifras || []).forEach((p, pIdx) => {
+        (p.musicas || []).forEach(m => {
+          if (m.titulo.toLowerCase().includes(termoBuscaAtual) || p.nome.toLowerCase().includes(termoBuscaAtual)) {
+            resultados.push({ pastaNome: p.nome + ' (Global)', tipo: 'global', pIdx, musica: m });
+          }
+        });
+      });
+
+      if (usuarioLogado) {
+        (dadosPessoais.cifras || []).forEach((p, pIdx) => {
+          (p.musicas || []).forEach(m => {
+            if (m.titulo.toLowerCase().includes(termoBuscaAtual) || p.nome.toLowerCase().includes(termoBuscaAtual)) {
+              resultados.push({ pastaNome: p.nome + ' (Pessoal)', tipo: 'pessoal', pIdx, musica: m });
+            }
+          });
+        });
+      }
+
+      if (resultados.length === 0) return '<p style="color: #6b7280; text-align: center; padding: 30px;">Nenhuma música encontrada com esse termo.</p>';
+
+      return `<div class="lista-grid">` + resultados.map(r => `
+        <a href="#/musica/${r.tipo}/${r.pIdx}/${r.musica.id}" class="list-card">
+          <div class="card-icon music"><span class="material-icons-round">music_note</span></div>
+          <div class="card-content">
+            <h4>${r.musica.titulo}</h4>
+            <span>${r.pastaNome} • <span class="tag-tom">Tom: ${r.musica.tom || 'C'}</span></span>
+          </div>
+          <span class="material-icons-round chevron">chevron_right</span>
+        </a>
+      `).join('') + `</div>`;
+    }
+
+    // --- RENDERIZAÇÃO DA PASTA ---
+    function renderizarPasta(tipo, pIdx) {
+      const isGlobal = (tipo === 'global');
+      const pasta = isGlobal ? (dadosApp.cifras || [])[pIdx] : (dadosPessoais.cifras || [])[pIdx];
+      if (!pasta) return '<p>Pasta não encontrada.</p>';
+
+      const podeEditar = isGlobal ? eProprietario() : true;
+
+      let mF = (pasta.musicas || []).filter(m => m.titulo.toLowerCase().includes(termoBuscaAtual));
+      let htmlMusicas = mF.map(m => `
+        <a href="#/musica/${tipo}/${pIdx}/${m.id}" class="list-card">
+          <div class="card-icon music"><span class="material-icons-round">music_note</span></div>
+          <div class="card-content">
+            <h4>${m.titulo}</h4>
+            <span><span class="tag-tom">Tom: ${m.tom || 'C'}</span></span>
+          </div>
+          <span class="material-icons-round chevron">chevron_right</span>
+        </a>
+      `).join('') || '<p style="color: #6b7280; text-align: center; padding: 20px;">Nenhuma música nesta pasta.</p>';
+
+      return `
+        <div class="cabecalho-secao" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button class="icon-btn" onclick="window.location.hash='#/'"><span class="material-icons-round" style="color:#334155">arrow_back</span></button>
+            <h2 style="font-size:20px; font-weight:700; margin:0;">${pasta.nome} ${isGlobal ? '' : '<span style="font-size:11px; color:#4f46e5; background:#e0e7ff; padding:2px 6px; border-radius:4px; vertical-align:middle;">Pessoal</span>'}</h2>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            ${podeEditar ? `
+              <button onclick="renomearPasta('${tipo}', ${pIdx})" class="icon-btn" title="Renomear Pasta" style="background:#f1f5f9;"><span class="material-icons-round" style="font-size:18px; color:#475569;">edit</span></button>
+              <button onclick="excluirPasta('${tipo}', ${pIdx})" class="icon-btn" title="Excluir Pasta" style="background:#fee2e2;"><span class="material-icons-round" style="font-size:18px; color:#ef4444;">delete</span></button>
+              <button onclick="abrirCriarMusica('${tipo}', ${pIdx})" class="btn btn-primary" style="font-size:12px;"><span class="material-icons-round" style="font-size:16px;">add</span> Nova Música</button>
+            ` : ''}
+          </div>
+        </div>
+
+        <div class="search-container">
+          <span class="material-icons-round">search</span>
+          <input type="text" placeholder="Buscar música nesta pasta..." oninput="termoBuscaAtual=this.value.toLowerCase(); document.getElementById('listaDinamicaMusicas').innerHTML=gerarHtmlListaMusicasInternas('${tipo}', ${pIdx});">
+        </div>
+
+        <div class="lista-grid" id="listaDinamicaMusicas">
+          ${htmlMusicas}
+        </div>
+      `;
+    }
+
+    function gerarHtmlListaMusicasInternas(tipo, pIdx) {
+      const isGlobal = (tipo === 'global');
+      const pasta = isGlobal ? (dadosApp.cifras || [])[pIdx] : (dadosPessoais.cifras || [])[pIdx];
+      if (!pasta) return '';
+      let mF = (pasta.musicas || []).filter(m => m.titulo.toLowerCase().includes(termoBuscaAtual));
+      return mF.map(m => `
+        <a href="#/musica/${tipo}/${pIdx}/${m.id}" class="list-card">
+          <div class="card-icon music"><span class="material-icons-round">music_note</span></div>
+          <div class="card-content">
+            <h4>${m.titulo}</h4>
+            <span><span class="tag-tom">Tom: ${m.tom || 'C'}</span></span>
+          </div>
+          <span class="material-icons-round chevron">chevron_right</span>
+        </a>
+      `).join('') || '<p style="color: #6b7280; text-align: center; padding: 20px;">Nenhuma música encontrada.</p>';
+    }
+
+    // --- RENDERIZAÇÃO DA MÚSICA & EDITOR ---
+    function renderizarMusica(tipo, pIdx, mId) {
+      const isGlobal = (tipo === 'global');
+      const pasta = isGlobal ? (dadosApp.cifras || [])[pIdx] : (dadosPessoais.cifras || [])[pIdx];
+      const m = pasta?.musicas.find(mu => mu.id === mId);
+      if (!m) return '<p>Música não encontrada.</p>';
+
+      tomAtual = normalizarNota(m.tom || 'C'); 
+      musicaTomOriginal = tomAtual; 
+      conteudoOriginal = m.conteudo;
+      
+      const opT = NOTAS.map(n => `<option value="${n}">${n}</option>`).join('');
+      setTimeout(() => { 
+        const el = document.getElementById('selectTom');
+        if (el) el.value = tomAtual; 
+        definirTom(tomAtual); 
+        ajustarZoomAutomatico(); 
+      }, 50);
+
+      const podeEditar = isGlobal ? eProprietario() : true;
+      let btnPadClass = (isPadPlaying) ? "btn-circular pad-btn-ativo" : "btn-circular";
+
+      return `
+        <div class="cabecalho-secao" style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button class="icon-btn" onclick="window.location.hash='#/pasta/${tipo}/${pIdx}'"><span class="material-icons-round" style="color:#334155">arrow_back</span></button>
+            <h2 style="font-size:20px; font-weight:700;">${m.titulo}</h2>
+          </div>
+          ${podeEditar ? `
+            <button onclick="abrirEditorMusica('${tipo}', ${pIdx}, '${m.id}')" class="btn" style="font-size:12px; border-color:#cbd5e1;"><span class="material-icons-round" style="font-size:16px;">edit</span> Editar</button>
+          ` : ''}
+        </div>
+        
+        <div class="controles-musica-moderno">
+          <div class="linha-controles">
+            <div class="controle-pilula"><span class="label">Tom</span><button class="btn-circular" onclick="alterarTom(-1)">-</button><select id="selectTom" class="select-invisivel" onchange="definirTom(this.value)">${opT}</select><button class="btn-circular" onclick="alterarTom(1)">+</button></div>
+            <div class="controle-pilula"><span class="label">Fonte</span><button class="btn-circular" onclick="alterarFonte(-2)">A-</button><button class="btn-circular" onclick="alterarFonte(2)">A+</button></div>
+            
+            <div class="controle-pilula">
+              <span class="label">Pad</span>
+              <button class="${btnPadClass}" id="btnPillPad" onclick="abrirBotaoPad()">
+                <span class="material-icons-round" style="font-size: 18px;">keyboard</span>
+              </button>
+            </div>
+          </div>
+          <div class="controle-rolagem-container">
+            <button id="btnRolagem" class="btn-iniciar-rolagem" onclick="alternarRolagem()"><span class="material-icons-round" style="font-size:18px">play_arrow</span> Iniciar</button>
+            <input type="range" id="velocidadeRolagem" class="slider-moderno" min="1" max="100" value="30" oninput="atualizarVelocidadeRolagem()">
+          </div>
+        </div>
+
+        <button class="btn btn-secondary" id="btnAbrirPratica" style="width: 100%; margin-top: 15px; font-size: 14px; background: #e0e7ff; color: #4f46e5; border: 1px dashed #a5b4fc; justify-content:center;" onclick="document.getElementById('inputAudioPratica').click()">
+          <span class="material-icons-round" style="font-size: 20px;">headphones</span> Carregar Áudio para Ensaio
+        </button>
+        <input type="file" id="inputAudioPratica" accept="audio/*" style="display: none;" onchange="carregarAudioPratica(event)">
+        
+        <div class="player-pratica-container" id="containerPlayerPratica" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+              <span class="material-icons-round" style="color: #64748b; font-size: 18px;">music_note</span>
+              <span id="nomeAudioPratica" style="font-size: 13px; font-weight: 600; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Áudio</span>
+            </div>
+            <button class="icon-btn" style="color: #ef4444; padding: 4px;" onclick="fecharPlayerPratica()"><span class="material-icons-round" style="font-size: 18px;">close</span></button>
+          </div>
+          <div class="player-acoes">
+            <div class="player-botoes">
+              <button class="btn-acao-audio" onclick="pularTempoPratica(-5)"><span class="material-icons-round" style="font-size: 18px;">replay_5</span></button>
+              <button class="btn-play-principal" onclick="togglePlayPratica()"><span class="material-icons-round" id="iconPlayPratica">play_arrow</span></button>
+              <button class="btn-acao-audio" onclick="pularTempoPratica(5)"><span class="material-icons-round" style="font-size: 18px;">forward_5</span></button>
+            </div>
+            <div style="background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 2px 6px;">
+              <select class="select-invisivel" style="font-size: 12px; font-weight: 600; color: #334155; width: auto;" onchange="mudarVelocidadePratica(this.value)">
+                <option value="0.5">0.5x</option>
+                <option value="0.75">0.75x</option>
+                <option value="1" selected>1.0x</option>
+                <option value="1.25">1.25x</option>
+                <option value="1.5">1.5x</option>
+              </select>
+            </div>
+          </div>
+          <div class="player-timeline">
+            <span class="tempo-audio" id="tempoAtualPratica">00:00</span>
+            <input type="range" id="sliderPratica" class="slider-moderno" style="flex: 1; height: 6px;" min="0" max="100" value="0" step="0.1" oninput="arrastandoPratica(this.value)" onchange="soltouPratica(this.value)">
+            <span class="tempo-audio" id="tempoTotalPratica">00:00</span>
+          </div>
+        </div>
+
+        <pre id="cifraConteudo" style="font-size: ${tamanhoFonteAtual}px;"></pre>
+      `;
+    }
+
+    function abrirEditorMusica(tipo, pIdx, mId) {
+      const isGlobal = (tipo === 'global');
+      const pasta = isGlobal ? dadosApp.cifras[pIdx] : dadosPessoais.cifras[pIdx];
+      const m = pasta.musicas.find(x => x.id === mId);
+      if (!m) return;
+
+      const opcoesTom = NOTAS.map(n => `<option value="${n}" ${m.tom === n ? 'selected' : ''}>${n}</option>`).join('');
+      const listaDestino = isGlobal ? dadosApp.cifras : dadosPessoais.cifras;
+      const opcoesPastas = listaDestino.map((p, idx) => `<option value="${idx}" ${idx === pIdx ? 'selected' : ''}>${p.nome}</option>`).join('');
+
+      document.getElementById('app').innerHTML = `
+        <div class="painel-editor-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3 style="margin:0; font-size:18px;">Editando Cifra</h3>
+            <button onclick="window.location.hash='#/musica/${tipo}/${pIdx}/${m.id}'" class="btn" style="padding:4px 8px;"><span class="material-icons-round">close</span></button>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px;">Título da Música:</label>
+            <input type="text" id="editTitulo" class="input-moderno-edit" value="${m.titulo}">
+          </div>
+
+          <div style="display:flex; gap:12px; margin-bottom:12px;">
+            <div style="flex:1;">
+              <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px;">Tom Principal:</label>
+              <select id="editTom" class="input-moderno-edit">${opcoesTom}</select>
+            </div>
+            <div style="flex:2;">
+              <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px;">Pasta Destino (Mover / Recortar):</label>
+              <select id="editPastaDestino" class="input-moderno-edit">${opcoesPastas}</select>
+            </div>
+          </div>
+
+          <div style="margin-bottom:15px;">
+            <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px;">Conteúdo da Cifra / Letra:</label>
+            <div class="barra-ferramentas-editor">
+              <button type="button" class="btn" onclick="document.execCommand('bold', false, null)"><span class="material-icons-round" style="font-size:16px;">format_bold</span></button>
+              <button type="button" class="btn" onclick="document.execCommand('italic', false, null)"><span class="material-icons-round" style="font-size:16px;">format_italic</span></button>
+            </div>
+            <div id="editConteudo" class="editor-cifra" contenteditable="true"></div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; gap:10px;">
+            <button onclick="salvarEdicaoMusica('${tipo}', ${pIdx}, '${m.id}')" class="btn btn-primary" style="flex:1; justify-content:center;"><span class="material-icons-round">save</span> Salvar Alterações</button>
+            <button onclick="excluirMusica('${tipo}', ${pIdx}, '${m.id}')" class="btn" style="color:#ef4444; border-color:#fca5a5;"><span class="material-icons-round">delete</span> Excluir</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('editConteudo').innerHTML = m.conteudo || '';
+    }
+
+    async function salvarEdicaoMusica(tipo, pIdx, mId) {
+      const isGlobal = (tipo === 'global');
+      const pastaOrigem = isGlobal ? dadosApp.cifras[pIdx] : dadosPessoais.cifras[pIdx];
+      const mIdx = pastaOrigem.musicas.findIndex(x => x.id === mId);
+      if (mIdx === -1) return;
+
+      const m = pastaOrigem.musicas[mIdx];
+      m.titulo = document.getElementById('editTitulo').value.trim();
+      m.tom = document.getElementById('editTom').value;
+      m.conteudo = document.getElementById('editConteudo').innerHTML;
+
+      const novaPastaIdx = parseInt(document.getElementById('editPastaDestino').value);
+
+      if (novaPastaIdx !== pIdx) {
+        pastaOrigem.musicas.splice(mIdx, 1);
+        const listaDestino = isGlobal ? dadosApp.cifras : dadosPessoais.cifras;
+        listaDestino[novaPastaIdx].musicas.push(m);
+      }
+
+      if (isGlobal) {
+        salvarDadosGlobaisLocais();
+      } else {
+        await salvarNoGoogleDrive();
+      }
+      window.location.hash = `#/musica/${tipo}/${novaPastaIdx}/${m.id}`;
+    }
+
+    async function excluirMusica(tipo, pIdx, mId) {
+      if (confirm('Tem certeza que deseja excluir esta música?')) {
+        const isGlobal = (tipo === 'global');
+        const lista = isGlobal ? dadosApp.cifras : dadosPessoais.cifras;
+        lista[pIdx].musicas = lista[pIdx].musicas.filter(x => x.id !== mId);
+        
+        if (isGlobal) {
+          salvarDadosGlobaisLocais();
+        } else {
+          await salvarNoGoogleDrive();
+        }
+        window.location.hash = `#/pasta/${tipo}/${pIdx}`;
+      }
+    }
+
+    async function abrirCriarNovaPastaGlobal() {
+      const nome = prompt('Nome da Nova Pasta Global:');
+      if (nome && nome.trim()) {
+        dadosApp.cifras.push({ id: 'p_' + Date.now(), nome: nome.trim(), musicas: [] });
+        salvarDadosGlobaisLocais();
+        navegar();
+      }
+    }
+
+    async function abrirCriarNovaPastaPessoal() {
+      const nome = prompt('Nome da Nova Pasta Pessoal:');
+      if (nome && nome.trim()) {
+        if (!dadosPessoais.cifras) dadosPessoais.cifras = [];
+        dadosPessoais.cifras.push({ id: 'p_user_' + Date.now(), nome: nome.trim(), musicas: [] });
+        await salvarNoGoogleDrive();
+        navegar();
+      }
+    }
+
+    async function renomearPasta(tipo, pIdx) {
+      const isGlobal = (tipo === 'global');
+      const pasta = isGlobal ? dadosApp.cifras[pIdx] : dadosPessoais.cifras[pIdx];
+      const novoNome = prompt('Novo nome para a pasta:', pasta.nome);
+      if (novoNome && novoNome.trim()) {
+        pasta.nome = novoNome.trim();
+        if (isGlobal) salvarDadosGlobaisLocais();
+        else await salvarNoGoogleDrive();
+        navegar();
+      }
+    }
+
+    async function excluirPasta(tipo, pIdx) {
+      const isGlobal = (tipo === 'global');
+      const pasta = isGlobal ? dadosApp.cifras[pIdx] : dadosPessoais.cifras[pIdx];
+      if (confirm(`Deseja realmente excluir a pasta "${pasta.nome}" e todas as suas músicas?`)) {
+        if (isGlobal) {
+          dadosApp.cifras.splice(pIdx, 1);
+          salvarDadosGlobaisLocais();
+        } else {
+          dadosPessoais.cifras.splice(pIdx, 1);
+          await salvarNoGoogleDrive();
+        }
+        window.location.hash = '#/';
+      }
+    }
+
+    async function abrirCriarMusica(tipo, pIdx) {
+      const titulo = prompt('Título da nova música:');
+      if (titulo && titulo.trim()) {
+        const nova = { id: 'm_' + Date.now(), titulo: titulo.trim(), tom: 'C', conteudo: 'Cole a cifra aqui...' };
+        const isGlobal = (tipo === 'global');
+        const lista = isGlobal ? dadosApp.cifras : dadosPessoais.cifras;
+        lista[pIdx].musicas.push(nova);
+        
+        if (isGlobal) salvarDadosGlobaisLocais();
+        else await salvarNoGoogleDrive();
+
+        abrirEditorMusica(tipo, pIdx, nova.id);
+      }
+    }
+
+    // --- TRANSPOSIÇÃO E UTILITÁRIOS ---
+    function normalizarNota(n) { const mb={'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'}; return mb[n]||n; }
+    function normalizarHtmlLinhas(html) { 
+      if (!html) return '';
+      return html.replace(/<div[^>]*><br><\/div>/gi, '\n').replace(/<p[^>]*><br><\/p>/gi, '\n').replace(/<div[^>]*>/gi, '\n').replace(/<p[^>]*>/gi, '\n').replace(/<\/div>/gi, '').replace(/<\/p>/gi, '').replace(/<br\s*\/?>/gi, '\n').replace(/&nbsp;/g, ' ').replace(/^\n+/, ''); 
+    }
+    function transporNotaUnica(n, st) { let nn=normalizarNota(n); let idx=NOTAS.indexOf(nn); if(idx===-1)return n; let nIdx=(idx+st)%12; if(nIdx<0)nIdx+=12; return NOTAS[nIdx]; }
+    function transporElementoAcorde(ac, st) { return ac.replace(/[A-G][b#]?/g, m=>transporNotaUnica(m,st)); }
+    function transporCifra(txt, st) {
+      const tn = normalizarHtmlLinhas(txt); const RE = /^[A-G][b#]?(?:m|M|maj|min|dim|aug|sus|add|º|°|\+|-)?\d*(?:M|m|maj|b5|#5|b9|#9|\+|-)?(?:\([^\)]+\))?(?:\/[A-G][b#]?)?$/i; const AMB=new Set(['A','E','B','EM','AM']);
+      return tn.split('\n').map(linha => {
+        if (!linha.trim()) return linha;
+        const pals = linha.trim().split(/\s+/); let aI=0, aA=0, pT=0;
+        pals.forEach(p => { let sh = p.replace(/<[^>]*>/g,''); let l = sh.replace(/^[^\w#bº°\+]+|[^\w#bº°\+]+$/gi,''); if(!l)return; if(/^[\d\-|\/\.\,\:\(\)\+º°]+$/.test(l) || /^\(?\d+x\)?$/i.test(l) || sh.endsWith(':'))return; if(/^(intro|introdução|passagem|solo|interlúdio|pausa|cresce|diminui|instrumental|piano|teclado|refrão|ponte|final|verso|cifra|base|parte|dedilhado|batida|riff|outro|vamp|tag)$/i.test(l))return; if(RE.test(l)){ if(AMB.has(l.toUpperCase()))aA++; else aI++; }else pT++; });
+        if (!((aI+aA)>0 && (pT===0 || aI>pT))) return linha;
+        return linha.replace(/(\S+)(\s*)/g, (m, pal, esp) => {
+          let sh = pal.replace(/<[^>]*>/g,''); let l = sh.replace(/^[^\w#bº°\+]+|[^\w#bº°\+]+$/gi,'');
+          if (RE.test(l) && !/^(intro|introdução|passagem|solo|interlúdio|tribal|pausa|cresce|diminui|instrumental|piano|teclado|refrão|ponte|final|verso|cifra|base|parte|dedilhado|batida|riff|outro|vamp|tag)$/i.test(l) && !sh.endsWith(':')) {
+            let i = pal.indexOf(l), c = pal.substring(0,i), f = pal.substring(i+l.length), lt = transporElementoAcorde(l,st);
+            let nPal = c + `<span class="acorde">${lt}</span>` + f; 
+            let qE = esp.length; let diferenca = lt.length - l.length;
+            if (diferenca > 0) { if (qE > 0) qE = Math.max(1, qE - diferenca); }
+            else if (diferenca < 0) { qE = qE + Math.abs(diferenca); }
+            return nPal + ' '.repeat(qE);
+          } return m;
+        });
+      }).join('\n');
+    }
+    function definirTom(nt) { tomAtual=normalizarNota(nt); const st=calcularDiferenca(musicaTomOriginal,tomAtual); const sT=document.getElementById('selectTom'); if(sT)sT.value=tomAtual; const pc=document.getElementById('cifraConteudo'); if(pc)pc.innerHTML=transporCifra(conteudoOriginal,st); }
+    function alterarTom(st) { let i=NOTAS.indexOf(tomAtual); if(i===-1)i=0; let ni=(i+st)%12; if(ni<0)ni+=12; definirTom(NOTAS[ni]); }
+    function calcularDiferenca(tO, tN) { let i1=NOTAS.indexOf(normalizarNota(tO)); let i2=NOTAS.indexOf(normalizarNota(tN)); if(i1===-1||i2===-1)return 0; return i2-i1; }
+    
+    function alternarRolagem() { const b=document.getElementById('btnRolagem'); if(intervalRolagem){ clearInterval(intervalRolagem); intervalRolagem=null; b.innerHTML='<span class="material-icons-round" style="font-size:18px">play_arrow</span> Iniciar'; }else{ b.innerHTML='<span class="material-icons-round" style="font-size:18px">pause</span> Pausar'; iniciarIntervaloRolagem(); } }
+    function iniciarIntervaloRolagem() { if(intervalRolagem)clearInterval(intervalRolagem); const v=parseInt(document.getElementById('velocidadeRolagem').value); intervalRolagem=setInterval(()=>window.scrollBy(0,1), 150-(v*1.4)); }
+    function atualizarVelocidadeRolagem() { if(intervalRolagem)iniciarIntervaloRolagem(); }
+    function alterarFonte(d) { tamanhoFonteAtual=Math.max(10, Math.min(45, tamanhoFonteAtual+d)); const pc=document.getElementById('cifraConteudo'); if(pc)pc.style.fontSize=`${tamanhoFonteAtual}px`; }
+    function ajustarZoomAutomatico() { const pE=document.getElementById('cifraConteudo'); if(!pE)return; let s=30; pE.style.fontSize=s+'px'; while(pE.scrollWidth>pE.clientWidth && s>10){ s-=1; pE.style.fontSize=s+'px'; } tamanhoFonteAtual=s; }
+
+    // --- PADS & ÁUDIO ---
+    function obterLinkDireto(url) {
+      if (!url) return '';
+      if (url.includes('dropbox.com')) return url.replace('dl=0', 'raw=1').replace('?dl=0', '?raw=1');
+      const matchId = url.match(/\/d\/(.+?)\//) || url.match(/id=(.+?)(&|$)/);
+      if (matchId && matchId[1]) return `https://drive.google.com/uc?export=download&id=${matchId[1]}`;
+      return url;
+    }
+
+    function fazerFadeOut(audio, numCanal) {
+      let intervalId = numCanal === 1 ? fadeInterval1 : fadeInterval2;
+      if (intervalId) clearInterval(intervalId);
+      let volAtual = audio.volume;
+      if (volAtual <= 0 || audio.paused) return; 
+      let step = volAtual / 20;
+      intervalId = setInterval(() => {
+        if (audio.volume - step > 0.02) { audio.volume -= step; }
+        else { audio.volume = 0; audio.pause(); clearInterval(intervalId); }
+      }, 100);
+      if (numCanal === 1) fadeInterval1 = intervalId; else fadeInterval2 = intervalId;
+    }
+
+    function abrirBotaoPad() { if (isPadPlaying) abrirModalPadAtivo(currentPadId); else abrirModalSelecaoPad(); }
+    function fecharModaisPad(force = false) {
+      if (force || (event && event.target && event.target.classList && event.target.classList.contains('modal-pad-overlay'))) {
+        document.getElementById('modalPadSelecao').classList.remove('ativo');
+        document.getElementById('modalPadAtivo').classList.remove('ativo');
+      }
+    }
+    function abrirModalSelecaoPad() {
+      const listaHTML = (dadosApp.pads || []).map(pad => `
+        <button class="btn-lista-pad" onclick="abrirModalPadAtivo('${pad.id}')">
+          <span style="display:flex; align-items:center; gap:8px;">
+            <span class="material-icons-round" style="color: #4f46e5;">piano</span> ${pad.nome}
+          </span>
+          <span class="material-icons-round">chevron_right</span>
+        </button>
+      `).join('');
+      document.getElementById('listaPadsModal').innerHTML = listaHTML || '<p style="text-align:center; font-size:13px; color:#64748b;">Nenhum Pad cadastrado.</p>';
+      document.getElementById('modalPadSelecao').classList.add('ativo');
+    }
+
+    function abrirModalPadAtivo(padId) {
+      document.getElementById('modalPadSelecao').classList.remove('ativo');
+      const pad = (dadosApp.pads || []).find(p => p.id === padId);
+      if (!pad) return;
+
+      document.getElementById('nomePadAtivoUI').innerText = pad.nome;
+      document.getElementById('sliderVolumePad').value = padGlobalVolume;
+
+      const gridHtml = NOTAS.map(tom => {
+        const link = pad.links ? pad.links[tom] : '';
+        const hasAudio = !!link;
+        const isTocandoEsse = (isPadPlaying && currentPadId === padId && currentPadTom === tom);
+        return `
+          <button class="btn-tom-pad ${isTocandoEsse ? 'ativo' : ''}" 
+                  ${!hasAudio ? 'style="opacity:0.3; cursor:not-allowed;" title="Sem áudio"' : ''} 
+                  onclick="${hasAudio ? `tocarTomPad('${pad.id}', '${tom}')` : ''}">
+            ${tom}
+          </button>
+        `;
+      }).join('');
+
+      document.getElementById('gridTonsPad').innerHTML = gridHtml;
+      const btnPill = document.getElementById('btnPillPad');
+      if (btnPill) {
+        if (isPadPlaying) btnPill.classList.add('pad-btn-ativo');
+        else btnPill.classList.remove('pad-btn-ativo');
+      }
+      document.getElementById('modalPadAtivo').classList.add('ativo');
+    }
+
+    function tocarTomPad(padId, tom) {
+      const pad = (dadosApp.pads || []).find(p => p.id === padId);
+      if (!pad || !pad.links[tom]) return;
+      const urlDireta = obterLinkDireto(pad.links[tom]);
+
+      if (isPadPlaying && currentPadId === padId && currentPadTom === tom) return;
+
+      let novoCanal = canalAtivo === 1 ? 2 : 1;
+      let audioAtual = canalAtivo === 1 ? audioPad1 : audioPad2;
+      let audioNovo = novoCanal === 1 ? audioPad1 : audioPad2;
+
+      if (isPadPlaying) fazerFadeOut(audioAtual, canalAtivo);
+
+      let intervalNovo = novoCanal === 1 ? fadeInterval1 : fadeInterval2;
+      if (intervalNovo) clearInterval(intervalNovo);
+
+      audioNovo.src = urlDireta;
+      audioNovo.volume = padGlobalVolume;
+      
+      audioNovo.play().then(() => {
+        isPadPlaying = true;
+        currentPadId = padId;
+        currentPadTom = tom;
+        canalAtivo = novoCanid = novoCanal;
+        abrirModalPadAtivo(padId); 
+      }).catch(err => alert('Erro ao reproduzir áudio do Pad.'));
+    }
+
+    function ajustarVolumePadGlobal(volumeStr) {
+      padGlobalVolume = parseFloat(volumeStr);
+      if (isPadPlaying) {
+        let audioAtivo = canalAtivo === 1 ? audioPad1 : audioPad2;
+        audioAtivo.volume = padGlobalVolume;
+      }
+    }
+
+    function pararPad() {
+      if (!isPadPlaying) return;
+      let audioAtivo = canalAtivo === 1 ? audioPad1 : audioPad2;
+      fazerFadeOut(audioAtivo, canalAtivo);
+      isPadPlaying = false;
+      currentPadId = null;
+      currentPadTom = null;
+      fecharModaisPad(true);
+      const btnPill = document.getElementById('btnPillPad');
+      if (btnPill) btnPill.classList.remove('pad-btn-ativo');
+    }
+
+    let audioPraticaObj = null; 
+    let isDraggingPratica = false;
+    function formatarTempoPratica(s) { if(isNaN(s)||s<0)return"00:00"; const m=Math.floor(s/60); const sc=Math.floor(s%60); return `${m.toString().padStart(2,'0')}:${sc.toString().padStart(2,'0')}`; }
+    function carregarAudioPratica(event) {
+      const file = event.target.files[0]; if (!file) return;
+      if (audioPraticaObj) { audioPraticaObj.pause(); URL.revokeObjectURL(audioPraticaObj.src); }
+      audioPraticaObj = new Audio(URL.createObjectURL(file)); audioPraticaObj.preservesPitch = true;
+      document.getElementById('nomeAudioPratica').innerText = file.name;
+      document.getElementById('btnAbrirPratica').style.display = 'none';
+      document.getElementById('containerPlayerPratica').style.display = 'block';
+      audioPraticaObj.addEventListener('loadedmetadata', () => { document.getElementById('tempoTotalPratica').innerText = formatarTempoPratica(audioPraticaObj.duration); document.getElementById('sliderPratica').max = 100; });
+      audioPraticaObj.addEventListener('timeupdate', () => { if (!isDraggingPratica) { document.getElementById('tempoAtualPratica').innerText = formatarTempoPratica(audioPraticaObj.currentTime); let p = (audioPraticaObj.currentTime / audioPraticaObj.duration) * 100 || 0; document.getElementById('sliderPratica').value = p; } });
+      audioPraticaObj.addEventListener('ended', () => { document.getElementById('iconPlayPratica').innerText = 'play_arrow'; });
+    }
+    function togglePlayPratica() { if(!audioPraticaObj)return; if(audioPraticaObj.paused){ audioPraticaObj.play(); document.getElementById('iconPlayPratica').innerText='pause'; }else{ audioPraticaObj.pause(); document.getElementById('iconPlayPratica').innerText='play_arrow'; } }
+    function pularTempoPratica(s) { if(audioPraticaObj) audioPraticaObj.currentTime = Math.max(0, Math.min(audioPraticaObj.duration, audioPraticaObj.currentTime + s)); }
+    function mudarVelocidadePratica(v) { if(audioPraticaObj) audioPraticaObj.playbackRate = parseFloat(v); }
+    function arrastandoPratica(v) { isDraggingPratica = true; if(audioPraticaObj) document.getElementById('tempoAtualPratica').innerText = formatarTempoPratica((v/100)*audioPraticaObj.duration); }
+    function soltouPratica(v) { isDraggingPratica = false; if(audioPraticaObj) audioPraticaObj.currentTime = (v/100)*audioPraticaObj.duration; }
+    function fecharPlayerPratica() {
+      if (audioPraticaObj) { audioPraticaObj.pause(); URL.revokeObjectURL(audioPraticaObj.src); audioPraticaObj = null; }
+      const c = document.getElementById('containerPlayerPratica'); const b = document.getElementById('btnAbrirPratica');
+      if(c) c.style.display = 'none'; if(b) b.style.display = 'flex';
+    }
+
+    function abrirModalMenu() { document.getElementById('modalMenu').classList.add('ativo'); }
+    function fecharModalMenu() { document.getElementById('modalMenu').classList.remove('ativo'); }
+
+    // --- ROUTER SPA ---
+    function navegar() {
+      if (intervalRolagem) { clearInterval(intervalRolagem); intervalRolagem = null; }
+      fecharPlayerPratica(); 
+      termoBuscaAtual = ''; 
+      const hash = window.location.hash;
+      const app = document.getElementById('app');
+
+      if (!hash || hash === '#/') {
+        app.innerHTML = renderizarInicio();
+      } else if (hash.startsWith('#/pasta/')) {
+        const partes = hash.split('/');
+        const tipo = partes[2];
+        const pIdx = parseInt(partes[3]);
+        app.innerHTML = renderizarPasta(tipo, pIdx);
+      } else if (hash.startsWith('#/musica/')) {
+        const partes = hash.split('/');
+        const tipo = partes[2];
+        const pIdx = parseInt(partes[3]);
+        const mId = partes[4];
+        app.innerHTML = renderizarMusica(tipo, pIdx, mId);
+      }
+    }
+
+    window.addEventListener('hashchange', navegar);
+  </script>
+</body>
+</html>

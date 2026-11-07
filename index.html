@@ -188,7 +188,7 @@
     let dadosApp = { cifras: [], galeria: [], pads: [] }; 
     let dadosPessoais = { cifras: [] }; 
     let usuarioLogado = null; 
-    let googleAccessToken = null;
+    let googleAccessToken = sessionStorage.getItem('gToken') || null;
     let driveFileId = null;
 
     function eProprietario() {
@@ -226,6 +226,10 @@
           email: user.email || '',
           foto: user.photoURL || ''
         };
+        // Se já houver token salvo na sessão, tenta carregar o Google Drive automaticamente
+        if (googleAccessToken) {
+          sincronizarComGoogleDrive(googleAccessToken);
+        }
       } else {
         usuarioLogado = null;
         googleAccessToken = null;
@@ -371,25 +375,41 @@
       }
     }
 
+    // --- GERENCIAMENTO DE DADOS GLOBAIS (FIRESTORE) ---
     async function carregarDadosGlobais() {
-      const salvo = localStorage.getItem('dadosCifras');
-      if (salvo) {
-        dadosApp = JSON.parse(salvo);
-        normalizarEstruturaPads();
-        navegar();
-      } else {
-        try {
-          const timestampCache = new Date().getTime();
-          const resposta = await fetch('backup.json?nocache=' + timestampCache, { cache: 'no-store' });
+      try {
+        const docRef = db.collection("sistema").doc("global");
+        const docSnap = await docRef.get();
+
+        if (docSnap.exists) {
+          dadosApp = docSnap.data();
+          console.log("Dados globais carregados do Firestore com sucesso!");
+        } else {
+          console.log("Nenhum dado global no Firestore. Tentando carregar backup.json local...");
+          const resposta = await fetch('backup.json', { cache: 'no-store' });
           if (resposta.ok) {
             let json = await resposta.json();
             processarBackup(json);
+            // Salva o backup inicial no Firestore para as próximas vezes
+            await salvarDadosGlobaisNoFirestore();
           } else {
-            navegar();
+            dadosApp = { cifras: [], galeria: [], pads: [] };
           }
-        } catch (e) {
-          navegar();
         }
+        normalizarEstruturaPads();
+        navegar();
+      } catch (e) {
+        console.error("Erro ao carregar dados globais:", e);
+        navegar();
+      }
+    }
+
+    async function salvarDadosGlobaisNoFirestore() {
+      try {
+        await db.collection("sistema").doc("global").set(dadosApp, { merge: true });
+        console.log("Dados globais salvos no Firestore com sucesso!");
+      } catch (error) {
+        console.error("Erro ao salvar dados globais no Firestore:", error);
       }
     }
 
@@ -404,17 +424,11 @@
         };
       }
       normalizarEstruturaPads();
-      salvarDadosGlobaisLocais();
-      navegar();
     }
 
     function normalizarEstruturaPads() {
       if (!dadosApp.pads) dadosApp.pads = [];
       dadosApp.pads = dadosApp.pads.map(p => { if (!p.links) p.links = {}; return p; });
-    }
-
-    function salvarDadosGlobaisLocais() {
-      localStorage.setItem('dadosCifras', JSON.stringify(dadosApp));
     }
 
     // --- RENDERIZAÇÃO DA PÁGINA INICIAL ---
@@ -789,7 +803,7 @@
       }
 
       if (isGlobal) {
-        salvarDadosGlobaisLocais();
+        await salvarDadosGlobaisNoFirestore();
       } else {
         await salvarNoGoogleDrive();
       }
@@ -803,7 +817,7 @@
         lista[pIdx].musicas = lista[pIdx].musicas.filter(x => x.id !== mId);
         
         if (isGlobal) {
-          salvarDadosGlobaisLocais();
+          await salvarDadosGlobaisNoFirestore();
         } else {
           await salvarNoGoogleDrive();
         }
@@ -815,7 +829,7 @@
       const nome = prompt('Nome da Nova Pasta Global:');
       if (nome && nome.trim()) {
         dadosApp.cifras.push({ id: 'p_' + Date.now(), nome: nome.trim(), musicas: [] });
-        salvarDadosGlobaisLocais();
+        await salvarDadosGlobaisNoFirestore();
         navegar();
       }
     }
@@ -836,7 +850,7 @@
       const novoNome = prompt('Novo nome para a pasta:', pasta.nome);
       if (novoNome && novoNome.trim()) {
         pasta.nome = novoNome.trim();
-        if (isGlobal) salvarDadosGlobaisLocais();
+        if (isGlobal) await salvarDadosGlobaisNoFirestore();
         else await salvarNoGoogleDrive();
         navegar();
       }
@@ -848,7 +862,7 @@
       if (confirm(`Deseja realmente excluir a pasta "${pasta.nome}" e todas as suas músicas?`)) {
         if (isGlobal) {
           dadosApp.cifras.splice(pIdx, 1);
-          salvarDadosGlobaisLocais();
+          await salvarDadosGlobaisNoFirestore();
         } else {
           dadosPessoais.cifras.splice(pIdx, 1);
           await salvarNoGoogleDrive();
@@ -865,7 +879,7 @@
         const lista = isGlobal ? dadosApp.cifras : dadosPessoais.cifras;
         lista[pIdx].musicas.push(nova);
         
-        if (isGlobal) salvarDadosGlobaisLocais();
+        if (isGlobal) await salvarDadosGlobaisNoFirestore();
         else await salvarNoGoogleDrive();
 
         abrirEditorMusica(tipo, pIdx, nova.id);
@@ -1005,7 +1019,7 @@
         isPadPlaying = true;
         currentPadId = padId;
         currentPadTom = tom;
-        canalAtivo = novoCanid = novoCanal;
+        canalAtivo = novoCanal;
         abrirModalPadAtivo(padId); 
       }).catch(err => alert('Erro ao reproduzir áudio do Pad.'));
     }

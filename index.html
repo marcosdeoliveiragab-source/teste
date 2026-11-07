@@ -15,7 +15,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* Layout limpo e alinhado */
     body { padding-top: 0; }
     .container { padding-left: 12px !important; padding-right: 12px !important; padding-top: 15px !important; }
     #cifraConteudo { padding: 16px !important; margin-left: 0 !important; margin-right: 0 !important; }
@@ -29,15 +28,19 @@
     }
     @keyframes fadeInToast { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Cabeçalho do Usuário na Home */
+    /* Elementos Fixos (Sticky) para Rolagem e Player de Áudio */
+    .controles-musica-moderno {
+      position: sticky; top: 0; z-index: 150; background: #f8fafc; padding: 10px 0; border-bottom: 1px solid #e2e8f0;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);
+    }
+    .player-pratica-container {
+      position: sticky; top: 75px; z-index: 140; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px;
+      padding: 12px; margin-top: 10px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
     .secao-auth-google {
-      margin-top: 25px;
-      margin-bottom: 25px;
-      padding: 24px;
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 17px;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.035);
+      margin-top: 25px; margin-bottom: 25px; padding: 24px; background: white;
+      border: 1px solid var(--border); border-radius: 17px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.035);
     }
     .secao-auth-google p { font-size: 13px; color: var(--muted); margin-bottom: 15px; }
 
@@ -49,12 +52,8 @@
     }
     .btn-google-custom:hover { background-color: #f8f9fa; border-color: #d2e3fc; box-shadow: 0 2px 6px rgba(60,64,67,0.15); }
 
-    .perfil-card-layout {
-      display: flex; align-items: center; gap: 16px; width: 100%;
-    }
-    .perfil-info-detalhes {
-      display: flex; flex-direction: column; gap: 2px; flex: 1; text-align: left;
-    }
+    .perfil-card-layout { display: flex; align-items: center; gap: 16px; width: 100%; }
+    .perfil-info-detalhes { display: flex; flex-direction: column; gap: 2px; flex: 1; text-align: left; }
     .avatar-usuario { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
     .avatar-fallback {
       width: 56px; height: 56px; border-radius: 50%; background: #4f46e5; color: white;
@@ -62,15 +61,12 @@
       box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
     }
 
-    /* Barra de Ferramentas Fixa no Editor */
     .barra-ferramentas-editor {
       position: sticky; top: 15px; z-index: 100;
       display: flex; gap: 6px; margin-bottom: 10px; background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0;
       box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     }
 
-    /* Player de Prática e PADs */
-    .player-pratica-container { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin-top: 15px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
     .player-acoes { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .player-botoes { display: flex; align-items: center; gap: 12px; }
     .btn-acao-audio { background: #e2e8f0; border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #334155; cursor: pointer; transition: background 0.2s; }
@@ -220,7 +216,7 @@
     let tamanhoFonteAtual = 16;
     let termoBuscaAtual = '';
 
-    // Estado PAD (Volume padrão em 1.0 - Máximo)
+    // Estado PAD
     let audioPad1 = new Audio();
     let audioPad2 = new Audio();
     audioPad1.loop = true; audioPad2.loop = true;
@@ -273,9 +269,7 @@
       if (!toast) return;
       toast.innerText = mensagem;
       toast.style.display = 'block';
-      setTimeout(() => {
-        toast.style.display = 'none';
-      }, 3000);
+      setTimeout(() => { toast.style.display = 'none'; }, 3000);
     }
 
     async function carregarDadosPessoaisFirestore(uid) {
@@ -285,6 +279,7 @@
         if (docSnap.exists) {
           dadosPessoais = docSnap.data();
           if (!dadosPessoais.cifras) dadosPessoais.cifras = [];
+          normalizarEstruturaPastasRecursivas(dadosPessoais.cifras);
         } else {
           dadosPessoais = { cifras: [] };
           await docRef.set(dadosPessoais);
@@ -309,7 +304,6 @@
       if (usuarioLogado) {
         const foto = usuarioLogado.foto;
         const inicial = usuarioLogado.nome.charAt(0).toUpperCase();
-        
         container.innerHTML = `
           <div style="display:flex; align-items:center;">
             ${foto ? `<img src="${foto}" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border: 1px solid rgba(255,255,255,0.4);">` : `<div style="width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white;">${inicial}</div>`}
@@ -338,6 +332,7 @@
           }
         }
         normalizarEstruturaPads();
+        normalizarEstruturaPastasRecursivas(dadosApp.cifras);
         navegar();
       } catch (e) {
         console.error("Erro ao carregar dados globais:", e);
@@ -371,18 +366,56 @@
       dadosApp.pads = dadosApp.pads.map(p => { if (!p.links) p.links = {}; return p; });
     }
 
+    function normalizarEstruturaPastasRecursivas(listaPastas) {
+      if (!Array.isArray(listaPastas)) return;
+      listaPastas.forEach(p => {
+        if (!p.subpastas) p.subpastas = [];
+        if (!p.musicas) p.musicas = [];
+        normalizarEstruturaPastasRecursivas(p.subpastas);
+      });
+    }
+
+    // Função auxiliar para contar todas as cifras recursivamente dentro de uma pasta e suas subpastas
+    function contarTotalMusicasNaPasta(pasta) {
+      let total = (pasta.musicas || []).length;
+      if (pasta.subpastas && pasta.subpastas.length > 0) {
+        pasta.subpastas.forEach(sub => {
+          total += contarTotalMusicasNaPasta(sub);
+        });
+      }
+      return total;
+    }
+
+    // Navegador de caminhos para subpastas (ex: "0" ou "0.subpastas.1")
+    function obterPastaPorCaminho(tipo, caminhoStr) {
+      const lista = (tipo === 'global') ? dadosApp.cifras : dadosPessoais.cifras;
+      if (!caminhoStr || caminhoStr === 'raiz') return null;
+      const partes = caminhoStr.split('.');
+      let atual = lista[parseInt(partes[0])];
+      for (let i = 1; i < partes.length; i += 2) {
+        const indiceSub = parseInt(partes[i+1]);
+        if (atual && atual.subpastas && atual.subpastas[indiceSub]) {
+          atual = atual.subpastas[indiceSub];
+        } else {
+          return null;
+        }
+      }
+      return atual;
+    }
+
     function renderizarInicio() {
       const cA = dadosApp.cifras || [];
-      let totalMusicas = 0;
-      cA.forEach(p => totalMusicas += (p.musicas || []).length);
+      let totalMusicasGlobais = 0;
+      cA.forEach(p => totalMusicasGlobais += contarTotalMusicasNaPasta(p));
 
       let htmlPastasGlobais = cA.map((p, pIdx) => {
+        const totalMusicas = contarTotalMusicasNaPasta(p);
         return `
           <a href="#/pasta/global/${pIdx}" class="list-card">
             <div class="card-icon folder"><span class="material-icons-round">folder</span></div>
             <div class="card-content">
               <h4>${p.nome}</h4>
-              <span><span class="material-icons-round" style="font-size: 14px">music_note</span> ${(p.musicas||[]).length} música(s)</span>
+              <span><span class="material-icons-round" style="font-size: 14px">music_note</span> ${totalMusicas} música(s)</span>
             </div>
             <span class="material-icons-round chevron">chevron_right</span>
           </a>
@@ -393,15 +426,16 @@
       if (usuarioLogado) {
         const cP = dadosPessoais.cifras || [];
         let totalMusicasPessoais = 0;
-        cP.forEach(p => totalMusicasPessoais += (p.musicas || []).length);
+        cP.forEach(p => totalMusicasPessoais += contarTotalMusicasNaPasta(p));
 
         let htmlPastasPessoais = cP.map((p, pIdx) => {
+          const totalMusicas = contarTotalMusicasNaPasta(p);
           return `
             <a href="#/pasta/pessoal/${pIdx}" class="list-card">
               <div class="card-icon folder" style="background:#e0e7ff; color:#4f46e5;"><span class="material-icons-round">folder_special</span></div>
               <div class="card-content">
                 <h4>${p.nome}</h4>
-                <span><span class="material-icons-round" style="font-size: 14px">music_note</span> ${(p.musicas||[]).length} música(s)</span>
+                <span><span class="material-icons-round" style="font-size: 14px">music_note</span> ${totalMusicas} música(s)</span>
               </div>
               <span class="material-icons-round chevron">chevron_right</span>
             </a>
@@ -411,17 +445,14 @@
         htmlSecaoPessoal = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:35px; margin-bottom:12px;">
             <h3 class="secao-titulo" style="margin:0;">Suas Cifras Pessoais</h3>
-            <button onclick="abrirCriarNovaPastaPessoal()" class="btn btn-primary" style="font-size:12px; padding:5px 10px;"><span class="material-icons-round" style="font-size:16px;">add</span> Nova Pasta Pessoal</button>
+            <button onclick="abrirCriarNovaPastaPessoal('raiz', '')" class="btn btn-primary" style="font-size:12px; padding:5px 10px;"><span class="material-icons-round" style="font-size:16px;">add</span> Nova Pasta Pessoal</button>
           </div>
 
-          <div class="stats-container" style="margin-bottom: 15px;">
-            <div class="stat-card">
-              <span class="material-icons-round icon-bg-folder">folder_special</span>
-              <div class="stat-info"><h3>${cP.length}</h3><span>Pastas Pessoais</span></div>
-            </div>
+          <!-- CONTADOR APENAS DE CIFRAS PESSOAIS -->
+          <div class="stats-container" style="margin-bottom: 15px; grid-template-columns: 1fr;">
             <div class="stat-card">
               <span class="material-icons-round icon-bg-music">music_note</span>
-              <div class="stat-info"><h3>${totalMusicasPessoais}</h3><span>Suas Músicas</span></div>
+              <div class="stat-info"><h3>${totalMusicasPessoais}</h3><span>Suas Músicas (Total)</span></div>
             </div>
           </div>
 
@@ -437,21 +468,17 @@
           <input type="text" placeholder="Buscar por pasta ou música..." oninput="termoBuscaAtual=this.value.toLowerCase(); document.getElementById('listaDinamica').innerHTML=gerarHtmlBuscaGeral();">
         </div>
 
-        <div class="stats-container">
-          <div class="stat-card">
-            <span class="material-icons-round icon-bg-folder">folder</span>
-            <div class="stat-info"><h3>${cA.length}</h3><span>Pastas Globais</span></div>
-          </div>
+        <div class="stats-container" style="grid-template-columns: 1fr;">
           <div class="stat-card">
             <span class="material-icons-round icon-bg-music">music_note</span>
-            <div class="stat-info"><h3>${totalMusicas}</h3><span>Músicas Globais</span></div>
+            <div class="stat-info"><h3>${totalMusicasGlobais}</h3><span>Total de Músicas Globais</span></div>
           </div>
         </div>
 
         <div id="listaDinamica">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <h3 class="secao-titulo" style="margin:0;">Pastas Públicas</h3>
-            ${eProprietario() ? `<button onclick="abrirCriarNovaPastaGlobal()" class="btn btn-primary" style="font-size:12px; padding:5px 10px;"><span class="material-icons-round" style="font-size:16px;">add</span> Nova Pasta Global</button>` : ''}
+            ${eProprietario() ? `<button onclick="abrirCriarNovaPastaGlobal('raiz', '')" class="btn btn-primary" style="font-size:12px; padding:5px 10px;"><span class="material-icons-round" style="font-size:16px;">add</span> Nova Pasta Global</button>` : ''}
           </div>
 
           <div class="lista-grid" style="margin-bottom: 25px;">
@@ -495,52 +522,85 @@
       `;
     }
 
+    function buscarRecursivo(listaPastas, termo, tipo, caminhoBase, resultados) {
+      if (!Array.isArray(listaPastas)) return;
+      listaPastas.forEach((p, pIdx) => {
+        const caminhoAtual = caminhoBase === '' ? `${pIdx}` : `${caminhoBase}.subpastas.${pIdx}`;
+        if (p.nome.toLowerCase().includes(termo)) {
+          // Coincidiu nome de pasta
+        }
+        if (p.musicas) {
+          p.musicas.forEach(m => {
+            if (m.titulo.toLowerCase().includes(termo) || p.nome.toLowerCase().includes(termo)) {
+              resultados.push({ pastaNome: p.nome, tipo, caminho: caminhoAtual, musica: m });
+            }
+          });
+        }
+        if (p.subpastas) {
+          buscarRecursivo(p.subpastas, termo, tipo, caminhoAtual, resultados);
+        }
+      });
+    }
+
     function gerarHtmlBuscaGeral() {
       if (!termoBuscaAtual) return renderizarInicio();
       let resultados = [];
 
-      (dadosApp.cifras || []).forEach((p, pIdx) => {
-        (p.musicas || []).forEach(m => {
-          if (m.titulo.toLowerCase().includes(termoBuscaAtual) || p.nome.toLowerCase().includes(termoBuscaAtual)) {
-            resultados.push({ pastaNome: p.nome + ' (Global)', tipo: 'global', pIdx, musica: m });
-          }
-        });
-      });
-
+      buscarRecursivo(dadosApp.cifras, termoBuscaAtual, 'global', '', resultados);
       if (usuarioLogado) {
-        (dadosPessoais.cifras || []).forEach((p, pIdx) => {
-          (p.musicas || []).forEach(m => {
-            if (m.titulo.toLowerCase().includes(termoBuscaAtual) || p.nome.toLowerCase().includes(termoBuscaAtual)) {
-              resultados.push({ pastaNome: p.nome + ' (Pessoal)', tipo: 'pessoal', pIdx, musica: m });
-            }
-          });
-        });
+        buscarRecursivo(dadosPessoais.cifras, termoBuscaAtual, 'pessoal', '', resultados);
       }
 
       if (resultados.length === 0) return '<p style="color: #6b7280; text-align: center; padding: 30px;">Nenhuma música encontrada com esse termo.</p>';
 
       return `<div class="lista-grid">` + resultados.map(r => `
-        <a href="#/musica/${r.tipo}/${r.pIdx}/${r.musica.id}" class="list-card">
+        <a href="#/musica/${r.tipo}/${r.caminho}/${r.musica.id}" class="list-card">
           <div class="card-icon music"><span class="material-icons-round">music_note</span></div>
           <div class="card-content">
             <h4>${r.musica.titulo}</h4>
-            <span>${r.pastaNome} • <span class="tag-tom">Tom: ${r.musica.tom || 'C'}</span></span>
+            <span>Pasta: ${r.pastaNome} • <span class="tag-tom">Tom: ${r.musica.tom || 'C'}</span></span>
           </div>
           <span class="material-icons-round chevron">chevron_right</span>
         </a>
       `).join('') + `</div>`;
     }
 
-    function renderizarPasta(tipo, pIdx) {
-      const isGlobal = (tipo === 'global');
-      const pasta = isGlobal ? (dadosApp.cifras || [])[pIdx] : (dadosPessoais.cifras || [])[pIdx];
+    function renderizarPasta(tipo, caminho) {
+      const pasta = obterPastaPorCaminho(tipo, caminho);
       if (!pasta) return '<p>Pasta não encontrada.</p>';
 
-      const podeEditar = isGlobal ? eProprietario() : true;
+      const podeEditar = tipo === 'global' ? eProprietario() : true;
+
+      // Renderizar Subpastas
+      let htmlSubpastas = '';
+      if (pasta.subpastas && pasta.subpastas.length > 0) {
+        htmlSubpastas = pasta.subpastas.map((sub, sIdx) => {
+          const subCaminho = `${caminho}.subpastas.${sIdx}`;
+          const totalMusicasSub = contarTotalMusicasNaPasta(sub);
+          return `
+            <a href="#/pasta/${tipo}/${subCaminho}" class="list-card">
+              <div class="card-icon folder" style="background:#e0e7ff; color:#4f46e5;"><span class="material-icons-round">folder</span></div>
+              <div class="card-content">
+                <h4>${sub.nome}</h4>
+                <span><span class="material-icons-round" style="font-size: 14px">music_note</span> ${totalMusicasSub} música(s)</span>
+              </div>
+              <span class="material-icons-round chevron">chevron_right</span>
+            </a>
+          `;
+        }).join('');
+      }
+
+      // Botão de voltar inteligente para pasta pai ou home
+      let caminhoVoltar = '#/';
+      if (caminho.includes('.subpastas.')) {
+        let partes = caminho.split('.');
+        partes.pop(); partes.pop();
+        caminhoVoltar = `#/pasta/${tipo}/${partes.join('.')}`;
+      }
 
       let mF = (pasta.musicas || []).filter(m => m.titulo.toLowerCase().includes(termoBuscaAtual));
       let htmlMusicas = mF.map(m => `
-        <a href="#/musica/${tipo}/${pIdx}/${m.id}" class="list-card">
+        <a href="#/musica/${tipo}/${caminho}/${m.id}" class="list-card">
           <div class="card-icon music"><span class="material-icons-round">music_note</span></div>
           <div class="card-content">
             <h4>${m.titulo}</h4>
@@ -548,41 +608,43 @@
           </div>
           <span class="material-icons-round chevron">chevron_right</span>
         </a>
-      `).join('') || '<p style="color: #6b7280; text-align: center; padding: 20px;">Nenhuma música nesta pasta.</p>';
+      `).join('');
 
       return `
         <div class="cabecalho-secao" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
           <div style="display:flex; align-items:center; gap:10px;">
-            <button class="icon-btn" onclick="window.location.hash='#/'"><span class="material-icons-round" style="color:#334155">arrow_back</span></button>
-            <h2 style="font-size:20px; font-weight:700; margin:0;">${pasta.nome} ${isGlobal ? '' : '<span style="font-size:11px; color:#4f46e5; background:#e0e7ff; padding:2px 6px; border-radius:4px; vertical-align:middle;">Pessoal</span>'}</h2>
+            <button class="icon-btn" onclick="window.location.hash='${caminhoVoltar}'"><span class="material-icons-round" style="color:#334155">arrow_back</span></button>
+            <h2 style="font-size:20px; font-weight:700; margin:0;">${pasta.nome}</h2>
           </div>
           <div style="display:flex; gap:8px; align-items:center;">
             ${podeEditar ? `
-              <button onclick="renomearPasta('${tipo}', ${pIdx})" class="icon-btn" title="Renomear Pasta" style="background:#f1f5f9;"><span class="material-icons-round" style="font-size:18px; color:#475569;">edit</span></button>
-              <button onclick="excluirPasta('${tipo}', ${pIdx})" class="icon-btn" title="Excluir Pasta" style="background:#fee2e2;"><span class="material-icons-round" style="font-size:18px; color:#ef4444;">delete</span></button>
-              <button onclick="abrirCriarMusica('${tipo}', ${pIdx})" class="btn btn-primary" style="font-size:12px;"><span class="material-icons-round" style="font-size:16px;">add</span> Nova Música</button>
+              <button onclick="renomearPasta('${tipo}', '${caminho}')" class="icon-btn" title="Renomear Pasta" style="background:#f1f5f9;"><span class="material-icons-round" style="font-size:18px; color:#475569;">edit</span></button>
+              <button onclick="excluirPasta('${tipo}', '${caminho}')" class="icon-btn" title="Excluir Pasta" style="background:#fee2e2;"><span class="material-icons-round" style="font-size:18px; color:#ef4444;">delete</span></button>
+              <button onclick="abrirCriarSubpasta('${tipo}', '${caminho}')" class="btn" style="font-size:12px; background:#f1f5f9;"><span class="material-icons-round" style="font-size:16px;">create_new_folder</span> Nova Subpasta</button>
+              <button onclick="abrirCriarMusica('${tipo}', '${caminho}')" class="btn btn-primary" style="font-size:12px;"><span class="material-icons-round" style="font-size:16px;">add</span> Nova Música</button>
             ` : ''}
           </div>
         </div>
 
         <div class="search-container">
           <span class="material-icons-round">search</span>
-          <input type="text" placeholder="Buscar música nesta pasta..." oninput="termoBuscaAtual=this.value.toLowerCase(); document.getElementById('listaDinamicaMusicas').innerHTML=gerarHtmlListaMusicasInternas('${tipo}', ${pIdx});">
+          <input type="text" placeholder="Buscar música nesta pasta..." oninput="termoBuscaAtual=this.value.toLowerCase(); document.getElementById('listaDinamicaMusicas').innerHTML=gerarHtmlListaMusicasInternas('${tipo}', '${caminho}');">
         </div>
 
+        ${htmlSubpastas ? `<div class="lista-grid" style="margin-bottom: 20px;">${htmlSubpastas}</div>` : ''}
+
         <div class="lista-grid" id="listaDinamicaMusicas">
-          ${htmlMusicas}
+          ${htmlMusicas || '<p style="color: #6b7280; text-align: center; padding: 20px; grid-column: 1/-1;">Nenhuma música nesta pasta.</p>'}
         </div>
       `;
     }
 
-    function gerarHtmlListaMusicasInternas(tipo, pIdx) {
-      const isGlobal = (tipo === 'global');
-      const pasta = isGlobal ? (dadosApp.cifras || [])[pIdx] : (dadosPessoais.cifras || [])[pIdx];
+    function gerarHtmlListaMusicasInternas(tipo, caminho) {
+      const pasta = obterPastaPorCaminho(tipo, caminho);
       if (!pasta) return '';
       let mF = (pasta.musicas || []).filter(m => m.titulo.toLowerCase().includes(termoBuscaAtual));
       return mF.map(m => `
-        <a href="#/musica/${tipo}/${pIdx}/${m.id}" class="list-card">
+        <a href="#/musica/${tipo}/${caminho}/${m.id}" class="list-card">
           <div class="card-icon music"><span class="material-icons-round">music_note</span></div>
           <div class="card-content">
             <h4>${m.titulo}</h4>
@@ -590,12 +652,11 @@
           </div>
           <span class="material-icons-round chevron">chevron_right</span>
         </a>
-      `).join('') || '<p style="color: #6b7280; text-align: center; padding: 20px;">Nenhuma música encontrada.</p>';
+      `).join('') || '<p style="color: #6b7280; text-align: center; padding: 20px; grid-column: 1/-1;">Nenhuma música encontrada.</p>';
     }
 
-    function renderizarMusica(tipo, pIdx, mId) {
-      const isGlobal = (tipo === 'global');
-      const pasta = isGlobal ? (dadosApp.cifras || [])[pIdx] : (dadosPessoais.cifras || [])[pIdx];
+    function renderizarMusica(tipo, caminho, mId) {
+      const pasta = obterPastaPorCaminho(tipo, caminho);
       const m = pasta?.musicas.find(mu => mu.id === mId);
       if (!m) return '<p>Música não encontrada.</p>';
 
@@ -611,20 +672,21 @@
         ajustarZoomAutomatico(); 
       }, 50);
 
-      const podeEditar = isGlobal ? eProprietario() : true;
+      const podeEditar = tipo === 'global' ? eProprietario() : true;
       let btnPadClass = (isPadPlaying) ? "btn-circular pad-btn-ativo" : "btn-circular";
 
       return `
         <div class="cabecalho-secao" style="display:flex; justify-content:space-between; align-items:center;">
           <div style="display:flex; align-items:center; gap:10px;">
-            <button class="icon-btn" onclick="window.location.hash='#/pasta/${tipo}/${pIdx}'"><span class="material-icons-round" style="color:#334155">arrow_back</span></button>
+            <button class="icon-btn" onclick="window.location.hash='#/pasta/${tipo}/${caminho}'"><span class="material-icons-round" style="color:#334155">arrow_back</span></button>
             <h2 style="font-size:20px; font-weight:700;">${m.titulo}</h2>
           </div>
           ${podeEditar ? `
-            <button onclick="abrirEditorMusica('${tipo}', ${pIdx}, '${m.id}')" class="btn" style="font-size:12px; border-color:#cbd5e1;"><span class="material-icons-round" style="font-size:16px;">edit</span> Editar</button>
+            <button onclick="abrirEditorMusica('${tipo}', '${caminho}', '${m.id}')" class="btn" style="font-size:12px; border-color:#cbd5e1;"><span class="material-icons-round" style="font-size:16px;">edit</span> Editar</button>
           ` : ''}
         </div>
         
+        <!-- CONTROLES FIXOS (STICKY) NA TELA -->
         <div class="controles-musica-moderno">
           <div class="linha-controles">
             <div class="controle-pilula"><span class="label">Tom</span><button class="btn-circular" onclick="alterarTom(-1)">-</button><select id="selectTom" class="select-invisivel" onchange="definirTom(this.value)">${opT}</select><button class="btn-circular" onclick="alterarTom(1)">+</button></div>
@@ -648,6 +710,7 @@
         </button>
         <input type="file" id="inputAudioPratica" accept="audio/*" style="display: none;" onchange="carregarAudioPratica(event)">
         
+        <!-- PLAYER DE ÁUDIO FIXO (STICKY) -->
         <div class="player-pratica-container" id="containerPlayerPratica" style="display: none;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
@@ -683,22 +746,18 @@
       `;
     }
 
-    function abrirEditorMusica(tipo, pIdx, mId) {
-      const isGlobal = (tipo === 'global');
-      const pasta = isGlobal ? dadosApp.cifras[pIdx] : dadosPessoais.cifras[pIdx];
+    function abrirEditorMusica(tipo, caminho, mId) {
+      const pasta = obterPastaPorCaminho(tipo, caminho);
       const m = pasta.musicas.find(x => x.id === mId);
       if (!m) return;
 
       const opcoesTom = NOTAS.map(n => `<option value="${n}" ${m.tom === n ? 'selected' : ''}>${n}</option>`).join('');
-      const listaDestino = isGlobal ? dadosApp.cifras : dadosPessoais.cifras;
-      const opcoesPastas = listaDestino.map((p, idx) => `<option value="${idx}" ${idx === pIdx ? 'selected' : ''}>${p.nome}</option>`).join('');
 
       document.getElementById('app').innerHTML = `
         <div class="painel-editor-card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <h3 style="margin:0; font-size:18px;">Editando Cifra</h3>
-            <!-- Botão X corrigido para redirecionar corretamente -->
-            <button onclick="window.location.hash='#/musica/${tipo}/${pIdx}/${m.id}'" class="icon-btn" style="padding:4px;"><span class="material-icons-round">close</span></button>
+            <button onclick="window.location.hash='#/musica/${tipo}/${caminho}/${m.id}'" class="icon-btn" style="padding:4px;"><span class="material-icons-round">close</span></button>
           </div>
 
           <div style="margin-bottom:12px;">
@@ -706,15 +765,9 @@
             <input type="text" id="editTitulo" class="input-moderno-edit" value="${m.titulo}">
           </div>
 
-          <div style="display:flex; gap:12px; margin-bottom:12px;">
-            <div style="flex:1;">
-              <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px;">Tom Principal:</label>
-              <select id="editTom" class="input-moderno-edit">${opcoesTom}</select>
-            </div>
-            <div style="flex:2;">
-              <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px;">Pasta Destino (Mover / Recortar):</label>
-              <select id="editPastaDestino" class="input-moderno-edit">${opcoesPastas}</select>
-            </div>
+          <div style="margin-bottom:12px;">
+            <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px;">Tom Principal:</label>
+            <select id="editTom" class="input-moderno-edit">${opcoesTom}</select>
           </div>
 
           <div style="margin-bottom:15px;">
@@ -727,8 +780,8 @@
           </div>
 
           <div style="display:flex; justify-content:space-between; gap:10px;">
-            <button onclick="salvarEdicaoMusica('${tipo}', ${pIdx}, '${m.id}')" class="btn btn-primary" style="flex:1; justify-content:center;"><span class="material-icons-round">save</span> Salvar Alterações</button>
-            <button onclick="excluirMusica('${tipo}', ${pIdx}, '${m.id}')" class="btn" style="color:#ef4444; border-color:#fca5a5;"><span class="material-icons-round">delete</span> Excluir</button>
+            <button onclick="salvarEdicaoMusica('${tipo}', '${caminho}', '${m.id}')" class="btn btn-primary" style="flex:1; justify-content:center;"><span class="material-icons-round">save</span> Salvar Alterações</button>
+            <button onclick="excluirMusica('${tipo}', '${caminho}', '${m.id}')" class="btn" style="color:#ef4444; border-color:#fca5a5;"><span class="material-icons-round">delete</span> Excluir</button>
           </div>
         </div>
       `;
@@ -736,113 +789,122 @@
       document.getElementById('editConteudo').innerHTML = m.conteudo || '';
     }
 
-    async function salvarEdicaoMusica(tipo, pIdx, mId) {
-      const isGlobal = (tipo === 'global');
-      const pastaOrigem = isGlobal ? dadosApp.cifras[pIdx] : dadosPessoais.cifras[pIdx];
-      const mIdx = pastaOrigem.musicas.findIndex(x => x.id === mId);
+    async function salvarEdicaoMusica(tipo, caminho, mId) {
+      const pasta = obterPastaPorCaminho(tipo, caminho);
+      const mIdx = pasta.musicas.findIndex(x => x.id === mId);
       if (mIdx === -1) return;
 
-      const m = pastaOrigem.musicas[mIdx];
+      const m = pasta.musicas[mIdx];
       m.titulo = document.getElementById('editTitulo').value.trim();
       m.tom = document.getElementById('editTom').value;
       m.conteudo = document.getElementById('editConteudo').innerHTML;
 
-      const novaPastaIdx = parseInt(document.getElementById('editPastaDestino').value);
+      if (tipo === 'global') await salvarDadosGlobaisNoFirestore();
+      else await salvarNoFirestorePessoal();
 
-      if (novaPastaIdx !== pIdx) {
-        pastaOrigem.musicas.splice(mIdx, 1);
-        const listaDestino = isGlobal ? dadosApp.cifras : dadosPessoais.cifras;
-        listaDestino[novaPastaIdx].musicas.push(m);
-      }
-
-      if (isGlobal) {
-        await salvarDadosGlobaisNoFirestore();
-      } else {
-        await salvarNoFirestorePessoal();
-      }
       mostrarToast("Alterações salvas com sucesso!");
-      window.location.hash = `#/musica/${tipo}/${novaPastaIdx}/${m.id}`;
+      window.location.hash = `#/musica/${tipo}/${caminho}/${m.id}`;
     }
 
-    async function excluirMusica(tipo, pIdx, mId) {
+    async function excluirMusica(tipo, caminho, mId) {
       if (confirm('Tem certeza que deseja excluir esta música?')) {
-        const isGlobal = (tipo === 'global');
-        const lista = isGlobal ? dadosApp.cifras : dadosPessoais.cifras;
-        lista[pIdx].musicas = lista[pIdx].musicas.filter(x => x.id !== mId);
+        const pasta = obterPastaPorCaminho(tipo, caminho);
+        pasta.musicas = pasta.musicas.filter(x => x.id !== mId);
         
-        if (isGlobal) {
-          await salvarDadosGlobaisNoFirestore();
-        } else {
-          await salvarNoFirestorePessoal();
-        }
+        if (tipo === 'global') await salvarDadosGlobaisNoFirestore();
+        else await salvarNoFirestorePessoal();
+
         mostrarToast("Música excluída com sucesso!");
-        window.location.hash = `#/pasta/${tipo}/${pIdx}`;
+        window.location.hash = `#/pasta/${tipo}/${caminho}`;
       }
     }
 
-    async function abrirCriarNovaPastaGlobal() {
+    async function abrirCriarNovaPastaGlobal(paiCaminho, paiNome) {
       const nome = prompt('Nome da Nova Pasta Global:');
       if (nome && nome.trim()) {
-        dadosApp.cifras.push({ id: 'p_' + Date.now(), nome: nome.trim(), musicas: [] });
+        if (paiCaminho === 'raiz') {
+          dadosApp.cifras.push({ id: 'p_' + Date.now(), nome: nome.trim(), musicas: [], subpastas: [] });
+        } else {
+          const pastaPai = obterPastaPorCaminho('global', paiCaminho);
+          if (pastaPai) pastaPai.subpastas.push({ id: 'p_' + Date.now(), nome: nome.trim(), musicas: [], subpastas: [] });
+        }
         await salvarDadosGlobaisNoFirestore();
-        mostrarToast("Pasta global criada!");
+        mostrarToast("Pasta criada!");
         navegar();
       }
     }
 
-    async function abrirCriarNovaPastaPessoal() {
+    async function abrirCriarNovaPastaPessoal(paiCaminho, paiNome) {
       const nome = prompt('Nome da Nova Pasta Pessoal:');
       if (nome && nome.trim()) {
         if (!dadosPessoais.cifras) dadosPessoais.cifras = [];
-        dadosPessoais.cifras.push({ id: 'p_user_' + Date.now(), nome: nome.trim(), musicas: [] });
+        if (paiCaminho === 'raiz') {
+          dadosPessoais.cifras.push({ id: 'p_user_' + Date.now(), nome: nome.trim(), musicas: [], subpastas: [] });
+        } else {
+          const pastaPai = obterPastaPorCaminho('pessoal', paiCaminho);
+          if (pastaPai) pastaPai.subpastas.push({ id: 'p_user_' + Date.now(), nome: nome.trim(), musicas: [], subpastas: [] });
+        }
         await salvarNoFirestorePessoal();
         mostrarToast("Pasta pessoal criada!");
         navegar();
       }
     }
 
-    async function renomearPasta(tipo, pIdx) {
-      const isGlobal = (tipo === 'global');
-      const pasta = isGlobal ? dadosApp.cifras[pIdx] : dadosPessoais.cifras[pIdx];
+    function abrirCriarSubpasta(tipo, caminho) {
+      if (tipo === 'global') abrirCriarNovaPastaGlobal(caminho, '');
+      else abrirCriarNovaPastaPessoal(caminho, '');
+    }
+
+    async function renomearPasta(tipo, caminho) {
+      const pasta = obterPastaPorCaminho(tipo, caminho);
+      if (!pasta) return;
       const novoNome = prompt('Novo nome para a pasta:', pasta.nome);
       if (novoNome && novoNome.trim()) {
         pasta.nome = novoNome.trim();
-        if (isGlobal) await salvarDadosGlobaisNoFirestore();
+        if (tipo === 'global') await salvarDadosGlobaisNoFirestore();
         else await salvarNoFirestorePessoal();
         mostrarToast("Pasta renomeada!");
         navegar();
       }
     }
 
-    async function excluirPasta(tipo, pIdx) {
-      const isGlobal = (tipo === 'global');
-      const pasta = isGlobal ? dadosApp.cifras[pIdx] : dadosPessoais.cifras[pIdx];
-      if (confirm(`Deseja realmente excluir a pasta "${pasta.nome}" e todas as suas músicas?`)) {
-        if (isGlobal) {
-          dadosApp.cifras.splice(pIdx, 1);
-          await salvarDadosGlobaisNoFirestore();
+    async function excluirPasta(tipo, caminho) {
+      const pasta = obterPastaPorCaminho(tipo, caminho);
+      if (!pasta) return;
+      if (confirm(`Deseja realmente excluir a pasta "${pasta.nome}" e todo o seu conteúdo?`)) {
+        if (!caminho.includes('.subpastas.')) {
+          const lista = (tipo === 'global') ? dadosApp.cifras : dadosPessoais.cifras;
+          const idx = lista.findIndex(p => p.id === pasta.id);
+          if (idx !== -1) lista.splice(idx, 1);
         } else {
-          dadosPessoais.cifras.splice(pIdx, 1);
-          await salvarNoFirestorePessoal();
+          let partes = caminho.split('.');
+          let indiceAlvo = parseInt(partes.pop());
+          partes.pop(); // remove 'subpastas'
+          const pastaPai = obterPastaPorCaminho(tipo, partes.join('.'));
+          if (pastaPai && pastaPai.subpastas) {
+            pastaPai.subpastas.splice(indiceAlvo, 1);
+          }
         }
+        if (tipo === 'global') await salvarDadosGlobaisNoFirestore();
+        else await salvarNoFirestorePessoal();
+
         mostrarToast("Pasta excluída!");
         window.location.hash = '#/';
       }
     }
 
-    async function abrirCriarMusica(tipo, pIdx) {
+    async function abrirCriarMusica(tipo, caminho) {
       const titulo = prompt('Título da nova música:');
       if (titulo && titulo.trim()) {
         const nova = { id: 'm_' + Date.now(), titulo: titulo.trim(), tom: 'C', conteudo: 'Cole a cifra aqui...' };
-        const isGlobal = (tipo === 'global');
-        const lista = isGlobal ? dadosApp.cifras : dadosPessoais.cifras;
-        lista[pIdx].musicas.push(nova);
+        const pasta = obterPastaPorCaminho(tipo, caminho);
+        if (pasta) pasta.musicas.push(nova);
         
-        if (isGlobal) await salvarDadosGlobaisNoFirestore();
+        if (tipo === 'global') await salvarDadosGlobaisNoFirestore();
         else await salvarNoFirestorePessoal();
 
         mostrarToast("Música criada!");
-        abrirEditorMusica(tipo, pIdx, nova.id);
+        abrirEditorMusica(tipo, caminho, nova.id);
       }
     }
 
@@ -884,7 +946,7 @@
     function alterarFonte(d) { tamanhoFonteAtual=Math.max(10, Math.min(45, tamanhoFonteAtual+d)); const pc=document.getElementById('cifraConteudo'); if(pc)pc.style.fontSize=`${tamanhoFonteAtual}px`; }
     function ajustarZoomAutomatico() { const pE=document.getElementById('cifraConteudo'); if(!pE)return; let s=30; pE.style.fontSize=s+'px'; while(pE.scrollWidth>pE.clientWidth && s>10){ s-=1; pE.style.fontSize=s+'px'; } tamanhoFonteAtual=s; }
 
-    // --- PADS & ÁUDIO COM FEEDBACK INSTANTÂNEO ---
+    // --- PADS & ÁUDIO ---
     function obterLinkDireto(url) {
       if (!url) return '';
       if (url.includes('dropbox.com')) return url.replace('dl=0', 'raw=1').replace('?dl=0', '?raw=1');
@@ -940,7 +1002,6 @@
         const isTocandoEsse = (isPadPlaying && currentPadId === padId && currentPadTom === tom);
         return `
           <button class="btn-tom-pad ${isTocandoEsse ? 'ativo' : ''}" 
-                  id="btnTom_${pad.id}_${tom}"
                   ${!hasAudio ? 'style="opacity:0.3; cursor:not-allowed;" title="Sem áudio"' : ''} 
                   onclick="${hasAudio ? `tocarTomPad('${pad.id}', '${tom}')` : ''}">
             ${tom}
@@ -964,7 +1025,6 @@
 
       if (isPadPlaying && currentPadId === padId && currentPadTom === tom) return;
 
-      // FEEDBACK INSTANTÂNEO NA UI: Acende o botão escolhido na hora antes mesmo do load do áudio
       currentPadId = padId;
       currentPadTom = tom;
       isPadPlaying = true;
@@ -984,9 +1044,7 @@
       
       audioNovo.play().then(() => {
         canalAtivo = novoCanal;
-      }).catch(err => {
-        alert('Erro ao reproduzir áudio do Pad.');
-      });
+      }).catch(err => { alert('Erro ao reproduzir áudio do Pad.'); });
     }
 
     function ajustarVolumePadGlobal(volumeStr) {
@@ -1050,14 +1108,14 @@
       } else if (hash.startsWith('#/pasta/')) {
         const partes = hash.split('/');
         const tipo = partes[2];
-        const pIdx = parseInt(partes[3]);
-        app.innerHTML = renderizarPasta(tipo, pIdx);
+        const caminho = partes.slice(3).join('/');
+        app.innerHTML = renderizarPasta(tipo, caminho);
       } else if (hash.startsWith('#/musica/')) {
         const partes = hash.split('/');
         const tipo = partes[2];
-        const pIdx = parseInt(partes[3]);
+        const caminho = partes[3];
         const mId = partes[4];
-        app.innerHTML = renderizarMusica(tipo, pIdx, mId);
+        app.innerHTML = renderizarMusica(tipo, caminho, mId);
       }
     }
 

@@ -15,9 +15,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* Ajuste de espaçamento superior geral para evitar cortes */
-    body { padding-top: 10px; }
-    .container { padding-left: 12px !important; padding-right: 12px !important; padding-top: 20px !important; }
+    /* Layout limpo e alinhado */
+    body { padding-top: 0; }
+    .container { padding-left: 12px !important; padding-right: 12px !important; padding-top: 15px !important; }
     #cifraConteudo { padding: 16px !important; margin-left: 0 !important; margin-right: 0 !important; }
 
     /* Estilo do Toast de Feedback */
@@ -173,7 +173,7 @@
       <div class="grid-tons-pad" id="gridTonsPad"></div>
       <div class="controle-volume-pad">
         <span class="material-icons-round" style="color: #64748b;">volume_down</span>
-        <input type="range" class="slider-moderno" id="sliderVolumePad" min="0" max="1" step="0.05" value="0.5" oninput="ajustarVolumePadGlobal(this.value)" style="flex: 1;">
+        <input type="range" class="slider-moderno" id="sliderVolumePad" min="0" max="1" step="0.05" value="1.0" oninput="ajustarVolumePadGlobal(this.value)" style="flex: 1;">
         <span class="material-icons-round" style="color: #64748b;">volume_up</span>
       </div>
       <button class="btn" style="width: 100%; margin-top: 20px; background: #ef4444; color: white; justify-content: center;" onclick="pararPad()">
@@ -220,12 +220,12 @@
     let tamanhoFonteAtual = 16;
     let termoBuscaAtual = '';
 
-    // Estado PAD
+    // Estado PAD (Volume padrão em 1.0 - Máximo)
     let audioPad1 = new Audio();
     let audioPad2 = new Audio();
     audioPad1.loop = true; audioPad2.loop = true;
     let canalAtivo = 1;
-    let padGlobalVolume = 0.5;
+    let padGlobalVolume = 1.0;
     let isPadPlaying = false;
     let currentPadId = null;
     let currentPadTom = null;
@@ -414,7 +414,6 @@
             <button onclick="abrirCriarNovaPastaPessoal()" class="btn btn-primary" style="font-size:12px; padding:5px 10px;"><span class="material-icons-round" style="font-size:16px;">add</span> Nova Pasta Pessoal</button>
           </div>
 
-          <!-- NOVO BLOCO DE ESTATÍSTICAS APENAS PARA AS CIFRAS PESSOAIS -->
           <div class="stats-container" style="margin-bottom: 15px;">
             <div class="stat-card">
               <span class="material-icons-round icon-bg-folder">folder_special</span>
@@ -459,10 +458,8 @@
             ${htmlPastasGlobais || '<p style="color:#64748b; text-align:center; grid-column: 1/-1;">Nenhuma pasta cadastrada.</p>'}
           </div>
 
-          <!-- SEÇÃO "SUAS CIFRAS" -->
           ${htmlSecaoPessoal}
 
-          <!-- SEÇÃO AUTH REESTRUTURADA -->
           <div class="secao-auth-google">
             ${!usuarioLogado ? `
               <div style="text-align: center;">
@@ -554,7 +551,7 @@
       `).join('') || '<p style="color: #6b7280; text-align: center; padding: 20px;">Nenhuma música nesta pasta.</p>';
 
       return `
-        <div class="cabecalho-secao" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top: 10px;">
+        <div class="cabecalho-secao" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
           <div style="display:flex; align-items:center; gap:10px;">
             <button class="icon-btn" onclick="window.location.hash='#/'"><span class="material-icons-round" style="color:#334155">arrow_back</span></button>
             <h2 style="font-size:20px; font-weight:700; margin:0;">${pasta.nome} ${isGlobal ? '' : '<span style="font-size:11px; color:#4f46e5; background:#e0e7ff; padding:2px 6px; border-radius:4px; vertical-align:middle;">Pessoal</span>'}</h2>
@@ -618,7 +615,7 @@
       let btnPadClass = (isPadPlaying) ? "btn-circular pad-btn-ativo" : "btn-circular";
 
       return `
-        <div class="cabecalho-secao" style="display:flex; justify-content:space-between; align-items:center; margin-top: 10px;">
+        <div class="cabecalho-secao" style="display:flex; justify-content:space-between; align-items:center;">
           <div style="display:flex; align-items:center; gap:10px;">
             <button class="icon-btn" onclick="window.location.hash='#/pasta/${tipo}/${pIdx}'"><span class="material-icons-round" style="color:#334155">arrow_back</span></button>
             <h2 style="font-size:20px; font-weight:700;">${m.titulo}</h2>
@@ -697,10 +694,11 @@
       const opcoesPastas = listaDestino.map((p, idx) => `<option value="${idx}" ${idx === pIdx ? 'selected' : ''}>${p.nome}</option>`).join('');
 
       document.getElementById('app').innerHTML = `
-        <div class="painel-editor-card" style="margin-top: 10px;">
+        <div class="painel-editor-card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <h3 style="margin:0; font-size:18px;">Editando Cifra</h3>
-            <button onclick="window.location.hash='#/musica/${tipo}/${pIdx}/${m.id}'" class="btn" style="padding:4px 8px;"><span class="material-icons-round">close</span></button>
+            <!-- Botão X corrigido para redirecionar corretamente -->
+            <button onclick="window.location.hash='#/musica/${tipo}/${pIdx}/${m.id}'" class="icon-btn" style="padding:4px;"><span class="material-icons-round">close</span></button>
           </div>
 
           <div style="margin-bottom:12px;">
@@ -721,13 +719,10 @@
 
           <div style="margin-bottom:15px;">
             <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px;">Conteúdo da Cifra / Letra:</label>
-            
-            <!-- Barra de Ferramentas Fixa (Sticky) -->
             <div class="barra-ferramentas-editor">
               <button type="button" class="btn" onclick="document.execCommand('bold', false, null)"><span class="material-icons-round" style="font-size:16px;">format_bold</span></button>
               <button type="button" class="btn" onclick="document.execCommand('italic', false, null)"><span class="material-icons-round" style="font-size:16px;">format_italic</span></button>
             </div>
-
             <div id="editConteudo" class="editor-cifra" contenteditable="true"></div>
           </div>
 
@@ -765,11 +760,7 @@
       } else {
         await salvarNoFirestorePessoal();
       }
-
-      // Mostra feedback visual nítido para o usuário
       mostrarToast("Alterações salvas com sucesso!");
-      
-      // Retorna para a tela de visualização da música atualizada
       window.location.hash = `#/musica/${tipo}/${novaPastaIdx}/${m.id}`;
     }
 
@@ -893,7 +884,7 @@
     function alterarFonte(d) { tamanhoFonteAtual=Math.max(10, Math.min(45, tamanhoFonteAtual+d)); const pc=document.getElementById('cifraConteudo'); if(pc)pc.style.fontSize=`${tamanhoFonteAtual}px`; }
     function ajustarZoomAutomatico() { const pE=document.getElementById('cifraConteudo'); if(!pE)return; let s=30; pE.style.fontSize=s+'px'; while(pE.scrollWidth>pE.clientWidth && s>10){ s-=1; pE.style.fontSize=s+'px'; } tamanhoFonteAtual=s; }
 
-    // --- PADS & ÁUDIO ---
+    // --- PADS & ÁUDIO COM FEEDBACK INSTANTÂNEO ---
     function obterLinkDireto(url) {
       if (!url) return '';
       if (url.includes('dropbox.com')) return url.replace('dl=0', 'raw=1').replace('?dl=0', '?raw=1');
@@ -949,6 +940,7 @@
         const isTocandoEsse = (isPadPlaying && currentPadId === padId && currentPadTom === tom);
         return `
           <button class="btn-tom-pad ${isTocandoEsse ? 'ativo' : ''}" 
+                  id="btnTom_${pad.id}_${tom}"
                   ${!hasAudio ? 'style="opacity:0.3; cursor:not-allowed;" title="Sem áudio"' : ''} 
                   onclick="${hasAudio ? `tocarTomPad('${pad.id}', '${tom}')` : ''}">
             ${tom}
@@ -972,6 +964,12 @@
 
       if (isPadPlaying && currentPadId === padId && currentPadTom === tom) return;
 
+      // FEEDBACK INSTANTÂNEO NA UI: Acende o botão escolhido na hora antes mesmo do load do áudio
+      currentPadId = padId;
+      currentPadTom = tom;
+      isPadPlaying = true;
+      abrirModalPadAtivo(padId);
+
       let novoCanal = canalAtivo === 1 ? 2 : 1;
       let audioAtual = canalAtivo === 1 ? audioPad1 : audioPad2;
       let audioNovo = novoCanal === 1 ? audioPad1 : audioPad2;
@@ -985,12 +983,10 @@
       audioNovo.volume = padGlobalVolume;
       
       audioNovo.play().then(() => {
-        isPadPlaying = true;
-        currentPadId = padId;
-        currentPadTom = tom;
         canalAtivo = novoCanal;
-        abrirModalPadAtivo(padId); 
-      }).catch(err => alert('Erro ao reproduzir áudio do Pad.'));
+      }).catch(err => {
+        alert('Erro ao reproduzir áudio do Pad.');
+      });
     }
 
     function ajustarVolumePadGlobal(volumeStr) {

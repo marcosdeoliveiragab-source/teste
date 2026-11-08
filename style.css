@@ -662,3 +662,46 @@ pre {
   .btn-pill { font-size: 12px; padding: 10px 13px; }
   .card-icon { width: 54px; height: 54px; margin-right: 14px; }
 }
+
+
+/* =========================================================
+   CAMPO DE EDIÇÃO DA CIFRA (mesma proporção da leitura)
+========================================================= */
+
+#editConteudo {
+  white-space: pre;
+  overflow-x: auto;
+  max-height: none;
+  min-height: 300px;
+  line-height: 1.55;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, .05);
+}
+
+#editConteudo:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); }
+
+/* =========================================================
+   CONFIGURAÇÕES / LIXEIRA
+========================================================= */
+
+.card-icon.lixeira { color: #dc2626; background: linear-gradient(145deg, #fff3f3, #fee2e2); }
+
+.item-lixeira {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 14px 16px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, .05);
+}
+
+.item-lixeira-topo { display: flex; align-items: center; }
+
+.lixeira-info { font-size: 12px; color: var(--muted); line-height: 1.45; word-break: break-word; }
+
+.item-lixeira-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+.btn-pill-perigo { background: #fee2e2; color: #b91c1c; }
+.btn-pill-perigo:hover { background: #fecaca; }

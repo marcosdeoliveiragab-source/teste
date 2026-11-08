@@ -65,7 +65,13 @@
       position: sticky; top: 15px; z-index: 100;
       display: flex; gap: 6px; margin-bottom: 10px; background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0;
       box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      align-items: center; flex-wrap: wrap;
     }
+    .barra-ferramentas-editor .separador-barra { width: 1px; height: 22px; background: #cbd5e1; margin: 0 4px; }
+
+    .linha-tom-editor { display: flex; align-items: center; gap: 8px; }
+    .linha-tom-editor .input-moderno-edit { flex: 1; }
+    .dica-editor { font-size: 11px; color: #64748b; margin-top: 6px; line-height: 1.4; }
 
     .player-acoes { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .player-botoes { display: flex; align-items: center; gap: 12px; }
@@ -218,6 +224,7 @@
     }
 
     let tomAtual = '';
+    let tomEdicaoAtual = 'C';   // tom em que a cifra do EDITOR está escrita no momento
     let conteudoOriginal = '';
     let musicaTomOriginal = '';
     let intervalRolagem = null;
@@ -843,12 +850,17 @@
       `;
     }
 
+    // ---------- EDITOR DA CIFRA ----------
     function abrirEditorMusica(tipo, caminho, mId) {
       const pasta = obterPastaPorCaminho(tipo, caminho);
       const m = pasta.musicas.find(x => x.id === mId);
       if (!m) return;
 
-      const opcoesTom = NOTAS.map(n => `<option value="${n}" ${m.tom === n ? 'selected' : ''}>${n}</option>`).join('');
+      // Tom em que o texto do editor está escrito agora (sempre normalizado para a escala em sustenidos)
+      tomEdicaoAtual = normalizarNota(m.tom || 'C');
+      if (NOTAS.indexOf(tomEdicaoAtual) === -1) tomEdicaoAtual = 'C';
+
+      const opcoesTom = NOTAS.map(n => `<option value="${n}" ${tomEdicaoAtual === n ? 'selected' : ''}>${n}</option>`).join('');
 
       const tituloSeguro = (m.titulo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
@@ -866,14 +878,22 @@
 
           <div>
             <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px;">Tom Principal:</label>
-            <select id="editTom" class="input-moderno-edit">${opcoesTom}</select>
+            <div class="linha-tom-editor">
+              <button type="button" class="btn-circular" title="Descer meio tom" onclick="alterarTomEditor(-1)">-</button>
+              <select id="editTom" class="input-moderno-edit" onchange="definirTomEditor(this.value)">${opcoesTom}</select>
+              <button type="button" class="btn-circular" title="Subir meio tom" onclick="alterarTomEditor(1)">+</button>
+            </div>
+            <p class="dica-editor">Ao mudar o tom, os acordes do texto abaixo são transpostos automaticamente. Clique em "Salvar Alterações" para gravar.</p>
           </div>
         </div>
 
         <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin: 0 4px 6px;">Conteúdo da Cifra / Letra:</label>
         <div class="barra-ferramentas-editor">
-          <button type="button" class="btn" onclick="document.execCommand('bold', false, null)"><span class="material-icons-round" style="font-size:16px;">format_bold</span></button>
-          <button type="button" class="btn" onclick="document.execCommand('italic', false, null)"><span class="material-icons-round" style="font-size:16px;">format_italic</span></button>
+          <button type="button" class="btn" onmousedown="event.preventDefault()" onclick="document.execCommand('bold', false, null)"><span class="material-icons-round" style="font-size:16px;">format_bold</span></button>
+          <button type="button" class="btn" onmousedown="event.preventDefault()" onclick="document.execCommand('italic', false, null)"><span class="material-icons-round" style="font-size:16px;">format_italic</span></button>
+          <span class="separador-barra"></span>
+          <button type="button" class="btn" title="Diminuir fonte" onmousedown="event.preventDefault()" onclick="alterarFonteEditor(-2)">A-</button>
+          <button type="button" class="btn" title="Aumentar fonte" onmousedown="event.preventDefault()" onclick="alterarFonteEditor(2)">A+</button>
         </div>
         <div id="editConteudo" class="editor-cifra" contenteditable="true"></div>
 
@@ -884,16 +904,54 @@
       `;
 
       document.getElementById('editConteudo').innerHTML = m.conteudo || '';
-      ajustarZoomEditor();
+      window.scrollTo(0, 0);
+      agendarAjusteEditor();
     }
 
-    // Mesma lógica de zoom da leitura: a fonte é reduzida até a cifra caber na largura, sem quebrar linhas
+    // Ajusta a fonte do editor para a cifra caber na largura.
+    // Parte do tamanho já usado na leitura e só REDUZ se precisar (nunca estoura para 30px como antes).
     function ajustarZoomEditor() {
       const ed = document.getElementById('editConteudo');
       if (!ed) return;
-      let t = 30;
+      let t = Math.max(10, Math.min(tamanhoFonteAtual || 16, 30));
       ed.style.fontSize = t + 'px';
       while (ed.scrollWidth > ed.clientWidth && t > 10) { t -= 1; ed.style.fontSize = t + 'px'; }
+      tamanhoFonteAtual = t;
+    }
+
+    // No PC a barra de rolagem da página e as fontes carregam depois da primeira medição,
+    // por isso o ajuste é refeito quando o layout e as fontes já estão estáveis.
+    function agendarAjusteEditor() {
+      ajustarZoomEditor();
+      requestAnimationFrame(() => { ajustarZoomEditor(); requestAnimationFrame(ajustarZoomEditor); });
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarZoomEditor);
+    }
+
+    // Botões A- / A+ do editor
+    function alterarFonteEditor(d) {
+      tamanhoFonteAtual = Math.max(10, Math.min(45, (tamanhoFonteAtual || 16) + d));
+      const ed = document.getElementById('editConteudo');
+      if (ed) ed.style.fontSize = tamanhoFonteAtual + 'px';
+    }
+
+    // Transpõe o texto do editor do tom atual para o novo tom
+    function definirTomEditor(novoTom) {
+      const ed = document.getElementById('editConteudo');
+      const sel = document.getElementById('editTom');
+      if (!ed) return;
+      const novo = normalizarNota(novoTom);
+      if (NOTAS.indexOf(novo) === -1) return;
+      const st = calcularDiferenca(tomEdicaoAtual, novo);
+      if (st !== 0) ed.innerHTML = transporCifra(ed.innerHTML, st, false); // false = sem <span class="acorde">
+      tomEdicaoAtual = novo;
+      if (sel) sel.value = novo;
+      ajustarZoomEditor();
+    }
+
+    function alterarTomEditor(st) {
+      let i = NOTAS.indexOf(tomEdicaoAtual);
+      if (i === -1) i = 0;
+      definirTomEditor(NOTAS[((i + st) % 12 + 12) % 12]);
     }
 
     async function salvarEdicaoMusica(tipo, caminho, mId) {
@@ -905,7 +963,7 @@
       const novoTitulo = document.getElementById('editTitulo').value.trim();
       if (!novoTitulo) { alert('Digite um título para a música.'); return; }
       m.titulo = novoTitulo;
-      m.tom = document.getElementById('editTom').value;
+      m.tom = tomEdicaoAtual; // sempre igual ao tom em que o texto do editor está escrito
       m.conteudo = document.getElementById('editConteudo').innerHTML;
 
       if (tipo === 'global') await salvarDadosGlobaisNoFirestore();
@@ -1047,7 +1105,10 @@
     }
     function transporNotaUnica(n, st) { let nn=normalizarNota(n); let idx=NOTAS.indexOf(nn); if(idx===-1)return n; let nIdx=(idx+st)%12; if(nIdx<0)nIdx+=12; return NOTAS[nIdx]; }
     function transporElementoAcorde(ac, st) { return ac.replace(/[A-G][b#]?/g, m=>transporNotaUnica(m,st)); }
-    function transporCifra(txt, st) {
+
+    // comSpan = true  -> leitura: acordes saem dentro de <span class="acorde"> (ficam azuis)
+    // comSpan = false -> editor: acordes saem como texto puro, sem marcação extra
+    function transporCifra(txt, st, comSpan = true) {
       const tn = normalizarHtmlLinhas(txt); const RE = /^[A-G][b#]?(?:m|M|maj|min|dim|aug|sus|add|º|°|\+|-)?\d*(?:M|m|maj|b5|#5|b9|#9|\+|-)?(?:\([^\)]+\))?(?:\/[A-G][b#]?)?$/i; const AMB=new Set(['A','E','B','EM','AM']);
       return tn.split('\n').map(linha => {
         if (!linha.trim()) return linha;
@@ -1058,7 +1119,7 @@
           let sh = pal.replace(/<[^>]*>/g,''); let l = sh.replace(/^[^\w#bº°\+]+|[^\w#bº°\+]+$/gi,'');
           if (RE.test(l) && !/^(intro|introdução|passagem|solo|interlúdio|tribal|pausa|cresce|diminui|instrumental|piano|teclado|refrão|ponte|final|verso|cifra|base|parte|dedilhado|batida|riff|outro|vamp|tag)$/i.test(l) && !sh.endsWith(':')) {
             let i = pal.indexOf(l), c = pal.substring(0,i), f = pal.substring(i+l.length), lt = transporElementoAcorde(l,st);
-            let nPal = c + `<span class="acorde">${lt}</span>` + f; 
+            let nPal = c + (comSpan ? `<span class="acorde">${lt}</span>` : lt) + f; 
             let qE = esp.length; let diferenca = lt.length - l.length;
             if (diferenca > 0) { if (qE > 0) qE = Math.max(1, qE - diferenca); }
             else if (diferenca < 0) { qE = qE + Math.abs(diferenca); }

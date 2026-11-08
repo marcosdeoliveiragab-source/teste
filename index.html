@@ -106,7 +106,7 @@
 
     .painel-editor-card {
       background: white; border: 1px solid var(--border); border-radius: 17px;
-      padding: 20px; box-shadow: 0 4px 15px rgba(15,23,42,0.04); margin-bottom: 25px;
+      padding: 20px; box-shadow: 0 4px 15px rgba(15,23,42,0.04); margin-bottom: 16px;
     }
     .input-moderno-edit {
       width: 100%; padding: 10px 14px; border-radius: 9px; border: 1px solid #cbd5e1; font-size: 14px; outline: none; transition: all 0.2s;
@@ -186,9 +186,9 @@
 
   <!-- Barra inferior -->
   <nav class="bottom-nav">
-    <button class="ativo" onclick="window.location.hash='#/'"><span class="material-icons-round">home</span>Início</button>
+    <button id="navInicio" class="ativo" onclick="window.location.hash='#/'"><span class="material-icons-round">home</span>Início</button>
     <button onclick="mostrarToast('Favoritos em breve!')"><span class="material-icons-round">star</span>Favoritos</button>
-    <button onclick="mostrarToast('Configurações em breve!')"><span class="material-icons-round">settings</span>Configurações</button>
+    <button id="navConfig" onclick="window.location.hash='#/configuracoes'"><span class="material-icons-round">settings</span>Configurações</button>
   </nav>
 
   <script>
@@ -375,6 +375,7 @@
     function normalizarEstruturaPastasRecursivas(listaPastas) {
       if (!Array.isArray(listaPastas)) return;
       listaPastas.forEach(p => {
+        if (!p.id) p.id = gerarId('p');
         if (!p.subpastas) p.subpastas = [];
         if (!p.musicas) p.musicas = [];
         normalizarEstruturaPastasRecursivas(p.subpastas);
@@ -390,6 +391,71 @@
         });
       }
       return total;
+    }
+
+
+    // ---------- ORDEM ALFABÉTICA (só na exibição; os dados e os caminhos não mudam) ----------
+    const collatorPt = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true });
+    // Devolve os índices originais da lista, já na ordem alfabética
+    function indicesOrdenados(lista) {
+      return lista.map((_, i) => i).sort((a, b) => collatorPt.compare(lista[a].nome || '', lista[b].nome || '') || (a - b));
+    }
+    function musicasOrdenadas(musicas) {
+      return [...musicas].sort((a, b) => collatorPt.compare(a.titulo || '', b.titulo || ''));
+    }
+
+    // ---------- IDs, CAMINHOS E LIXEIRA ----------
+    function gerarId(prefixo) { return prefixo + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
+
+    function obterRaiz(tipo) { return (tipo === 'global') ? dadosApp.cifras : dadosPessoais.cifras; }
+
+    function salvarPorTipo(tipo) {
+      return (tipo === 'global') ? salvarDadosGlobaisNoFirestore() : salvarNoFirestorePessoal();
+    }
+
+    // Lista de pastas da raiz até a pasta do caminho (inclusive) — mesma lógica de obterPastaPorCaminho
+    function obterCadeiaPastas(tipo, caminhoStr) {
+      const lista = obterRaiz(tipo) || [];
+      if (!caminhoStr || caminhoStr === 'raiz') return [];
+      const partes = caminhoStr.split('.');
+      let atual = lista[parseInt(partes[0])];
+      const cadeia = atual ? [atual] : [];
+      for (let i = 1; i < partes.length; i += 2) {
+        const sub = atual && atual.subpastas && atual.subpastas[parseInt(partes[i + 1])];
+        if (!sub) break;
+        atual = sub;
+        cadeia.push(atual);
+      }
+      return cadeia;
+    }
+
+    // Encontra uma pasta pela sequência de ids (da raiz até ela)
+    function localizarPastaPorIds(tipo, ids) {
+      let lista = obterRaiz(tipo) || [];
+      let atual = null;
+      for (const id of ids) {
+        atual = lista.find(p => p.id === id);
+        if (!atual) return null;
+        lista = atual.subpastas || [];
+      }
+      return atual;
+    }
+
+    function obterLixeira(tipo) {
+      const alvo = (tipo === 'global') ? dadosApp : dadosPessoais;
+      if (!Array.isArray(alvo.lixeira)) alvo.lixeira = [];
+      return alvo.lixeira;
+    }
+
+    function moverParaLixeira(tipo, tipoItem, dados, cadeiaPai) {
+      obterLixeira(tipo).push({
+        idLixeira: gerarId('l'),
+        tipo: tipoItem,
+        dados: dados,
+        origemIds: cadeiaPai.map(p => p.id),
+        origemNomes: cadeiaPai.map(p => p.nome),
+        excluidoEm: new Date().toISOString()
+      });
     }
 
     // Navegador de caminhos para subpastas (ex: "0" ou "0.subpastas.1")
@@ -449,7 +515,8 @@
     function renderizarListasInicio() {
       const cA = dadosApp.cifras || [];
 
-      let htmlPastasGlobais = cA.map((p, pIdx) => {
+      let htmlPastasGlobais = indicesOrdenados(cA).map((pIdx) => {
+        const p = cA[pIdx];
         const totalMusicas = contarTotalMusicasNaPasta(p);
         return `
           <a href="#/pasta/global/${pIdx}" class="list-card">
@@ -469,7 +536,8 @@
         let totalMusicasPessoais = 0;
         cP.forEach(p => totalMusicasPessoais += contarTotalMusicasNaPasta(p));
 
-        let htmlPastasPessoais = cP.map((p, pIdx) => {
+        let htmlPastasPessoais = indicesOrdenados(cP).map((pIdx) => {
+          const p = cP[pIdx];
           const totalMusicas = contarTotalMusicasNaPasta(p);
           return `
             <a href="#/pasta/pessoal/${pIdx}" class="list-card">
@@ -578,6 +646,7 @@
       }
 
       if (resultados.length === 0) return '<p style="color: #6b7280; text-align: center; padding: 30px;">Nenhuma música encontrada com esse termo.</p>';
+      resultados.sort((a, b) => collatorPt.compare(a.musica.titulo || '', b.musica.titulo || ''));
 
       return `<div class="lista-grid">` + resultados.map(r => `
         <a href="#/musica/${r.tipo}/${r.caminho}/${r.musica.id}" class="list-card">
@@ -600,7 +669,8 @@
       // Renderizar Subpastas
       let htmlSubpastas = '';
       if (pasta.subpastas && pasta.subpastas.length > 0) {
-        htmlSubpastas = pasta.subpastas.map((sub, sIdx) => {
+        htmlSubpastas = indicesOrdenados(pasta.subpastas).map((sIdx) => {
+          const sub = pasta.subpastas[sIdx];
           const subCaminho = `${caminho}.subpastas.${sIdx}`;
           const totalMusicasSub = contarTotalMusicasNaPasta(sub);
           return `
@@ -624,7 +694,7 @@
         caminhoVoltar = `#/pasta/${tipo}/${partes.join('.')}`;
       }
 
-      let mF = (pasta.musicas || []).filter(m => m.titulo.toLowerCase().includes(termoBuscaAtual));
+      let mF = musicasOrdenadas((pasta.musicas || []).filter(m => m.titulo.toLowerCase().includes(termoBuscaAtual)));
       let htmlMusicas = mF.map(m => `
         <a href="#/musica/${tipo}/${caminho}/${m.id}" class="list-card">
           <div class="card-icon music"><span class="material-icons-round">music_note</span></div>
@@ -668,7 +738,7 @@
     function gerarHtmlListaMusicasInternas(tipo, caminho) {
       const pasta = obterPastaPorCaminho(tipo, caminho);
       if (!pasta) return '';
-      let mF = (pasta.musicas || []).filter(m => m.titulo.toLowerCase().includes(termoBuscaAtual));
+      let mF = musicasOrdenadas((pasta.musicas || []).filter(m => m.titulo.toLowerCase().includes(termoBuscaAtual)));
       return mF.map(m => `
         <a href="#/musica/${tipo}/${caminho}/${m.id}" class="list-card">
           <div class="card-icon music"><span class="material-icons-round">music_note</span></div>
@@ -780,6 +850,8 @@
 
       const opcoesTom = NOTAS.map(n => `<option value="${n}" ${m.tom === n ? 'selected' : ''}>${n}</option>`).join('');
 
+      const tituloSeguro = (m.titulo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
       document.getElementById('app').innerHTML = `
         <div class="painel-editor-card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -789,31 +861,39 @@
 
           <div style="margin-bottom:12px;">
             <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px;">Título da Música:</label>
-            <input type="text" id="editTitulo" class="input-moderno-edit" value="${m.titulo}">
+            <input type="text" id="editTitulo" class="input-moderno-edit" value="${tituloSeguro}">
           </div>
 
-          <div style="margin-bottom:12px;">
+          <div>
             <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px;">Tom Principal:</label>
             <select id="editTom" class="input-moderno-edit">${opcoesTom}</select>
           </div>
+        </div>
 
-          <div style="margin-bottom:15px;">
-            <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px;">Conteúdo da Cifra / Letra:</label>
-            <div class="barra-ferramentas-editor">
-              <button type="button" class="btn" onclick="document.execCommand('bold', false, null)"><span class="material-icons-round" style="font-size:16px;">format_bold</span></button>
-              <button type="button" class="btn" onclick="document.execCommand('italic', false, null)"><span class="material-icons-round" style="font-size:16px;">format_italic</span></button>
-            </div>
-            <div id="editConteudo" class="editor-cifra" contenteditable="true"></div>
-          </div>
+        <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin: 0 4px 6px;">Conteúdo da Cifra / Letra:</label>
+        <div class="barra-ferramentas-editor">
+          <button type="button" class="btn" onclick="document.execCommand('bold', false, null)"><span class="material-icons-round" style="font-size:16px;">format_bold</span></button>
+          <button type="button" class="btn" onclick="document.execCommand('italic', false, null)"><span class="material-icons-round" style="font-size:16px;">format_italic</span></button>
+        </div>
+        <div id="editConteudo" class="editor-cifra" contenteditable="true"></div>
 
-          <div style="display:flex; justify-content:space-between; gap:10px;">
-            <button onclick="salvarEdicaoMusica('${tipo}', '${caminho}', '${m.id}')" class="btn btn-primary" style="flex:1; justify-content:center;"><span class="material-icons-round">save</span> Salvar Alterações</button>
-            <button onclick="excluirMusica('${tipo}', '${caminho}', '${m.id}')" class="btn" style="color:#ef4444; border-color:#fca5a5;"><span class="material-icons-round">delete</span> Excluir</button>
-          </div>
+        <div style="display:flex; justify-content:space-between; gap:10px; margin: 16px 0 25px;">
+          <button onclick="salvarEdicaoMusica('${tipo}', '${caminho}', '${m.id}')" class="btn btn-primary" style="flex:1; justify-content:center;"><span class="material-icons-round">save</span> Salvar Alterações</button>
+          <button onclick="excluirMusica('${tipo}', '${caminho}', '${m.id}')" class="btn" style="color:#ef4444; border-color:#fca5a5;"><span class="material-icons-round">delete</span> Excluir</button>
         </div>
       `;
 
       document.getElementById('editConteudo').innerHTML = m.conteudo || '';
+      ajustarZoomEditor();
+    }
+
+    // Mesma lógica de zoom da leitura: a fonte é reduzida até a cifra caber na largura, sem quebrar linhas
+    function ajustarZoomEditor() {
+      const ed = document.getElementById('editConteudo');
+      if (!ed) return;
+      let t = 30;
+      ed.style.fontSize = t + 'px';
+      while (ed.scrollWidth > ed.clientWidth && t > 10) { t -= 1; ed.style.fontSize = t + 'px'; }
     }
 
     async function salvarEdicaoMusica(tipo, caminho, mId) {
@@ -822,7 +902,9 @@
       if (mIdx === -1) return;
 
       const m = pasta.musicas[mIdx];
-      m.titulo = document.getElementById('editTitulo').value.trim();
+      const novoTitulo = document.getElementById('editTitulo').value.trim();
+      if (!novoTitulo) { alert('Digite um título para a música.'); return; }
+      m.titulo = novoTitulo;
       m.tom = document.getElementById('editTom').value;
       m.conteudo = document.getElementById('editConteudo').innerHTML;
 
@@ -848,16 +930,17 @@
     window.addEventListener('resize', ajustarAlturaControles);
 
     async function excluirMusica(tipo, caminho, mId) {
-      if (confirm('Tem certeza que deseja excluir esta música?')) {
-        const pasta = obterPastaPorCaminho(tipo, caminho);
-        pasta.musicas = pasta.musicas.filter(x => x.id !== mId);
-        
-        if (tipo === 'global') await salvarDadosGlobaisNoFirestore();
-        else await salvarNoFirestorePessoal();
+      if (!confirm('Mover esta música para a lixeira?')) return;
+      const pasta = obterPastaPorCaminho(tipo, caminho);
+      if (!pasta) return;
+      const idx = pasta.musicas.findIndex(x => x.id === mId);
+      if (idx === -1) return;
+      const removida = pasta.musicas.splice(idx, 1)[0];
+      moverParaLixeira(tipo, 'musica', removida, obterCadeiaPastas(tipo, caminho));
+      await salvarPorTipo(tipo);
 
-        mostrarToast("Música excluída com sucesso!");
-        window.location.hash = `#/pasta/${tipo}/${caminho}`;
-      }
+      mostrarToast("Música movida para a lixeira!");
+      window.location.hash = `#/pasta/${tipo}/${caminho}`;
     }
 
     async function abrirCriarNovaPastaGlobal(paiCaminho, paiNome) {
@@ -912,26 +995,33 @@
     async function excluirPasta(tipo, caminho) {
       const pasta = obterPastaPorCaminho(tipo, caminho);
       if (!pasta) return;
-      if (confirm(`Deseja realmente excluir a pasta "${pasta.nome}" e todo o seu conteúdo?`)) {
-        if (!caminho.includes('.subpastas.')) {
-          const lista = (tipo === 'global') ? dadosApp.cifras : dadosPessoais.cifras;
-          const idx = lista.findIndex(p => p.id === pasta.id);
-          if (idx !== -1) lista.splice(idx, 1);
-        } else {
-          let partes = caminho.split('.');
-          let indiceAlvo = parseInt(partes.pop());
-          partes.pop(); // remove 'subpastas'
-          const pastaPai = obterPastaPorCaminho(tipo, partes.join('.'));
-          if (pastaPai && pastaPai.subpastas) {
-            pastaPai.subpastas.splice(indiceAlvo, 1);
-          }
-        }
-        if (tipo === 'global') await salvarDadosGlobaisNoFirestore();
-        else await salvarNoFirestorePessoal();
+      if (!confirm(`Mover a pasta "${pasta.nome}" e todo o seu conteúdo para a lixeira?`)) return;
 
-        mostrarToast("Pasta excluída!");
-        window.location.hash = '#/';
+      const cadeiaPai = obterCadeiaPastas(tipo, caminho).slice(0, -1);
+      let removida = null;
+      let caminhoPai = '';
+
+      // O índice vem do próprio caminho (antes usava o id, que as pastas antigas não têm)
+      if (!caminho.includes('.subpastas.')) {
+        const lista = obterRaiz(tipo);
+        const idx = parseInt(caminho);
+        if (isNaN(idx) || lista[idx] !== pasta) return;
+        removida = lista.splice(idx, 1)[0];
+      } else {
+        const partes = caminho.split('.');
+        const indiceAlvo = parseInt(partes.pop());
+        partes.pop(); // remove 'subpastas'
+        caminhoPai = partes.join('.');
+        const pastaPai = obterPastaPorCaminho(tipo, caminhoPai);
+        if (!pastaPai || !pastaPai.subpastas || pastaPai.subpastas[indiceAlvo] !== pasta) return;
+        removida = pastaPai.subpastas.splice(indiceAlvo, 1)[0];
       }
+
+      moverParaLixeira(tipo, 'pasta', removida, cadeiaPai);
+      await salvarPorTipo(tipo);
+
+      mostrarToast("Pasta movida para a lixeira!");
+      window.location.hash = caminhoPai ? `#/pasta/${tipo}/${caminhoPai}` : '#/';
     }
 
     async function abrirCriarMusica(tipo, caminho) {
@@ -1136,6 +1226,137 @@
     function abrirModalMenu() { document.getElementById('modalMenu').classList.add('ativo'); }
     function fecharModalMenu() { document.getElementById('modalMenu').classList.remove('ativo'); }
 
+    // ---------- CONFIGURAÇÕES E LIXEIRA ----------
+    function totalItensLixeira() {
+      let total = 0;
+      if (usuarioLogado) total += obterLixeira('pessoal').length;
+      if (eProprietario()) total += obterLixeira('global').length;
+      return total;
+    }
+
+    function renderizarConfiguracoes() {
+      const total = totalItensLixeira();
+      return `
+        <div class="secao-cabecalho" style="margin-top:14px;">
+          <h3 class="secao-titulo">Configurações</h3>
+        </div>
+        <div class="lista-grid">
+          <a href="#/lixeira" class="list-card">
+            <div class="card-icon lixeira"><span class="material-icons-round">delete</span></div>
+            <div class="card-content">
+              <h4>Lixeira</h4>
+              <span>${total} item(ns) excluído(s)</span>
+            </div>
+            <span class="material-icons-round chevron">chevron_right</span>
+          </a>
+        </div>
+      `;
+    }
+
+    function renderizarLixeira() {
+      const itens = [];
+      if (usuarioLogado) obterLixeira('pessoal').forEach(i => itens.push({ escopo: 'pessoal', item: i }));
+      if (eProprietario()) obterLixeira('global').forEach(i => itens.push({ escopo: 'global', item: i }));
+      itens.sort((a, b) => (b.item.excluidoEm || '').localeCompare(a.item.excluidoEm || ''));
+
+      const cabecalho = `
+        <div class="cabecalho-secao" style="display:flex; align-items:center; gap:10px; margin-top:14px;">
+          <button class="icon-btn" onclick="window.location.hash='#/configuracoes'"><span class="material-icons-round">arrow_back</span></button>
+          <h2 style="font-size:20px; font-weight:700; margin:0;">Lixeira</h2>
+        </div>
+      `;
+
+      let corpo;
+      if (!usuarioLogado) {
+        corpo = '<p style="color:#6b7280; text-align:center; padding:30px;">Faça login para ver a lixeira.</p>';
+      } else if (itens.length === 0) {
+        corpo = '<p style="color:#6b7280; text-align:center; padding:30px;">A lixeira está vazia.</p>';
+      } else {
+        corpo = '<div class="lista-grid">' + itens.map(({ escopo, item }) => {
+          const ehPasta = item.tipo === 'pasta';
+          const nome = ehPasta ? item.dados.nome : item.dados.titulo;
+          const origem = (item.origemNomes && item.origemNomes.length) ? item.origemNomes.join(' / ') : 'Início';
+          const quando = item.excluidoEm ? new Date(item.excluidoEm).toLocaleString('pt-BR') : '';
+          const detalhe = ehPasta ? `Pasta • ${contarTotalMusicasNaPasta(item.dados)} música(s)` : 'Música';
+          return `
+            <div class="item-lixeira">
+              <div class="item-lixeira-topo">
+                <div class="card-icon ${ehPasta ? (escopo === 'global' ? 'folder' : 'pessoal') : 'music'}"><span class="material-icons-round">${ehPasta ? 'folder' : 'music_note'}</span></div>
+                <div class="card-content">
+                  <h4>${nome}</h4>
+                  <p class="lixeira-info">${detalhe} • ${escopo === 'global' ? 'Pública' : 'Pessoal'}</p>
+                  <p class="lixeira-info">Origem: ${origem}</p>
+                  <p class="lixeira-info">Excluída em ${quando}</p>
+                </div>
+              </div>
+              <div class="item-lixeira-acoes">
+                <button class="btn-pill" onclick="restaurarDaLixeira('${escopo}', '${item.idLixeira}')"><span class="material-icons-round">restore</span> Restaurar</button>
+                <button class="btn-pill btn-pill-perigo" onclick="excluirDefinitivamente('${escopo}', '${item.idLixeira}')"><span class="material-icons-round">delete_forever</span> Excluir definitivamente</button>
+              </div>
+            </div>
+          `;
+        }).join('') + '</div>';
+      }
+      return cabecalho + corpo;
+    }
+
+    async function restaurarDaLixeira(escopo, idLixeira) {
+      const lixeira = obterLixeira(escopo);
+      const idx = lixeira.findIndex(i => i.idLixeira === idLixeira);
+      if (idx === -1) return;
+      const item = lixeira[idx];
+      const ids = item.origemIds || [];
+      const pastaOrigem = ids.length ? localizarPastaPorIds(escopo, ids) : null;
+
+      if (item.tipo === 'pasta') {
+        if (ids.length === 0) {
+          obterRaiz(escopo).push(item.dados);
+        } else if (pastaOrigem) {
+          if (!pastaOrigem.subpastas) pastaOrigem.subpastas = [];
+          pastaOrigem.subpastas.push(item.dados);
+        } else {
+          if (!confirm('A pasta onde ela estava não existe mais. Restaurar na raiz (Início)?')) return;
+          obterRaiz(escopo).push(item.dados);
+        }
+      } else {
+        let destino = pastaOrigem;
+        if (!destino) {
+          if (!confirm('A pasta onde esta música estava não existe mais. Restaurar em uma pasta chamada "Restauradas"?')) return;
+          const raiz = obterRaiz(escopo);
+          destino = raiz.find(p => p.nome === 'Restauradas');
+          if (!destino) {
+            destino = { id: gerarId('p'), nome: 'Restauradas', musicas: [], subpastas: [] };
+            raiz.push(destino);
+          }
+        }
+        if (!destino.musicas) destino.musicas = [];
+        destino.musicas.push(item.dados);
+      }
+
+      lixeira.splice(idx, 1);
+      await salvarPorTipo(escopo);
+      mostrarToast('Restaurado com sucesso!');
+      navegar();
+    }
+
+    async function excluirDefinitivamente(escopo, idLixeira) {
+      if (!confirm('Excluir definitivamente? Essa ação não pode ser desfeita.')) return;
+      const lixeira = obterLixeira(escopo);
+      const idx = lixeira.findIndex(i => i.idLixeira === idLixeira);
+      if (idx === -1) return;
+      lixeira.splice(idx, 1);
+      await salvarPorTipo(escopo);
+      mostrarToast('Excluído definitivamente!');
+      navegar();
+    }
+
+    function atualizarNavAtivo(hash) {
+      const emConfig = hash === '#/configuracoes' || hash === '#/lixeira';
+      const i = document.getElementById('navInicio'), c = document.getElementById('navConfig');
+      if (i) i.classList.toggle('ativo', !emConfig);
+      if (c) c.classList.toggle('ativo', emConfig);
+    }
+
     // --- ROUTER SPA ---
     function navegar() {
       if (intervalRolagem) { clearInterval(intervalRolagem); intervalRolagem = null; }
@@ -1146,6 +1367,7 @@
 
       // Esconde a barra inferior na tela da cifra (visual apenas)
       document.body.classList.toggle('sem-nav', hash.startsWith('#/musica/'));
+      atualizarNavAtivo(hash);
 
       if (!hash || hash === '#/') {
         app.innerHTML = renderizarInicio();
@@ -1160,6 +1382,12 @@
         const caminho = partes[3];
         const mId = partes[4];
         app.innerHTML = renderizarMusica(tipo, caminho, mId);
+      } else if (hash === '#/configuracoes') {
+        app.innerHTML = renderizarConfiguracoes();
+      } else if (hash === '#/lixeira') {
+        app.innerHTML = renderizarLixeira();
+      } else {
+        app.innerHTML = renderizarInicio();
       }
     }
 

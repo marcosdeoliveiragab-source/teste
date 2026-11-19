@@ -7,6 +7,7 @@
   
   <!-- Fontes e Ícones -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,500,0,0" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 
   <!-- SDKs do Firebase (Compat) -->
@@ -16,7 +17,7 @@
 
   <style>
     body { padding-top: 0; }
-    .container { padding-left: 14px !important; padding-right: 14px !important; padding-top: 6px !important; }
+    .container { padding-left: 14px; padding-right: 14px; padding-top: 6px; }
     #cifraConteudo { padding: 16px !important; margin-left: 0 !important; margin-right: 0 !important; }
 
     /* Estilo do Toast de Feedback */
@@ -27,6 +28,26 @@
       animation: fadeInToast 0.3s ease; white-space: nowrap;
     }
     @keyframes fadeInToast { from { opacity: 0; margin-bottom: -10px; } to { opacity: 1; margin-bottom: 0; } }
+
+    /* Navegação Superior Desktop (oculta no mobile) */
+    .desktop-nav { display: none; align-items: center; gap: 26px; margin-right: 14px; }
+    .desktop-nav button {
+      background: transparent; border: 0; font-family: 'Inter', sans-serif;
+      font-size: 15px; font-weight: 600; color: #334155; cursor: pointer;
+      padding: 6px 4px; position: relative; transition: color 0.2s;
+    }
+    .desktop-nav button:hover,
+    .desktop-nav button.ativo { color: var(--blue-dark); }
+    .desktop-nav button.ativo::after {
+      content: ""; position: absolute; left: 0; right: 0; bottom: -4px;
+      height: 3px; border-radius: 3px; background: var(--blue-dark);
+    }
+
+    /* Ícone de contorno para pastas no estilo da referência */
+    .card-icon .material-symbols-outlined {
+      font-size: 38px;
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
 
     /* Elementos Fixos (Sticky) para Rolagem e Player de Áudio */
     .controles-musica-moderno {
@@ -59,6 +80,145 @@
       width: 56px; height: 56px; border-radius: 50%; background: #4f46e5; color: white;
       display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold;
       box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+    }
+
+    /* Cartões Extras da Sidebar no Desktop */
+    .sidebar-widget {
+      display: none;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 20px 22px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+    }
+    .sidebar-widget h4 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 10px;
+    }
+    .widget-item-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #f8fafc;
+      text-decoration: none;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .widget-item-link:hover { background: var(--blue-soft); }
+
+    /* =========================================================
+       LAYOUT DESKTOP (>= 900px) — MANTENDO MOBILE INTACTO
+    ========================================================= */
+    @media (min-width: 900px) {
+      .navbar {
+        padding: 0 36px;
+      }
+      .desktop-nav {
+        display: flex;
+      }
+      .bottom-nav {
+        display: none !important;
+      }
+      .container {
+        max-width: 1280px;
+        padding: 18px 36px 60px;
+      }
+
+      /* Grade principal de 2 colunas na Home */
+      .home-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.85fr) minmax(320px, 1fr);
+        gap: 28px;
+        align-items: start;
+      }
+
+      .home-main .search-row {
+        margin-top: 0;
+        margin-bottom: 24px;
+      }
+
+      /* Grade de Pastas (3 colunas no PC) */
+      .home-main .lista-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 18px;
+      }
+
+      .home-main .list-card {
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        min-height: 195px;
+        padding: 24px 16px;
+        gap: 12px;
+      }
+
+      .home-main .card-icon {
+        margin-right: 0;
+        width: 72px;
+        height: 72px;
+        border-radius: 20px;
+      }
+
+      .home-main .card-icon .material-symbols-outlined {
+        font-size: 42px;
+      }
+
+      .home-main .card-content {
+        width: 100%;
+      }
+
+      .home-main .card-content h4 {
+        font-size: 16px;
+        margin-bottom: 6px;
+      }
+
+      .home-main .card-content span {
+        display: inline-flex;
+        justify-content: center;
+        background: #f1f5f9;
+        padding: 4px 10px;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .home-main .chevron {
+        display: none;
+      }
+
+      /* Coluna Lateral Direita */
+      .home-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        position: sticky;
+        top: 100px;
+      }
+
+      .home-sidebar .welcome-banner {
+        margin-top: 0;
+        padding: 22px;
+      }
+
+      .home-sidebar .wb-text h2 {
+        font-size: 24px;
+      }
+
+      .home-sidebar .secao-auth-google {
+        margin: 0;
+      }
+
+      .sidebar-widget {
+        display: block;
+      }
     }
 
     .barra-ferramentas-editor {
@@ -128,7 +288,7 @@
   <!-- Header -->
   <header class="navbar">
     <div class="nav-left">
-      <div class="brand">
+      <div class="brand" onclick="window.location.hash='#/'" style="cursor:pointer;">
         <div class="logo-icon"><span class="material-icons-round">music_note</span></div>
         <div class="brand-text">
           <h1>Cifras</h1>
@@ -137,6 +297,12 @@
       </div>
     </div>
     <div class="nav-right">
+      <nav class="desktop-nav">
+        <button id="deskNavInicio" class="ativo" onclick="window.location.hash='#/'">Início</button>
+        <button onclick="document.getElementById('inputBuscaPrincipal')?.focus()">Repertório</button>
+        <button onclick="mostrarToast('Favoritos em breve!')">Favoritos</button>
+        <button id="deskNavConfig" onclick="window.location.hash='#/configuracoes'">Configurações</button>
+      </nav>
       <div id="usuarioHeaderStatus" style="display: flex; align-items: center; gap: 10px;"></div>
     </div>
   </header>
@@ -190,7 +356,7 @@
     <p style="text-align: center; margin-top: 50px; color: #6b7280;">Carregando repertório...</p>
   </main>
 
-  <!-- Barra inferior -->
+  <!-- Barra inferior (Mobile) -->
   <nav class="bottom-nav">
     <button id="navInicio" class="ativo" onclick="window.location.hash='#/'"><span class="material-icons-round">home</span>Início</button>
     <button onclick="mostrarToast('Favoritos em breve!')"><span class="material-icons-round">star</span>Favoritos</button>
@@ -224,7 +390,7 @@
     }
 
     let tomAtual = '';
-    let tomEdicaoAtual = 'C';   // tom em que a cifra do EDITOR está escrita no momento
+    let tomEdicaoAtual = 'C';
     let conteudoOriginal = '';
     let musicaTomOriginal = '';
     let intervalRolagem = null;
@@ -389,7 +555,6 @@
       });
     }
 
-    // Função auxiliar para contar todas as cifras recursivamente dentro de uma pasta e suas subpastas
     function contarTotalMusicasNaPasta(pasta) {
       let total = (pasta.musicas || []).length;
       if (pasta.subpastas && pasta.subpastas.length > 0) {
@@ -400,10 +565,8 @@
       return total;
     }
 
-
-    // ---------- ORDEM ALFABÉTICA (só na exibição; os dados e os caminhos não mudam) ----------
+    // ---------- ORDEM ALFABÉTICA ----------
     const collatorPt = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true });
-    // Devolve os índices originais da lista, já na ordem alfabética
     function indicesOrdenados(lista) {
       return lista.map((_, i) => i).sort((a, b) => collatorPt.compare(lista[a].nome || '', lista[b].nome || '') || (a - b));
     }
@@ -413,14 +576,11 @@
 
     // ---------- IDs, CAMINHOS E LIXEIRA ----------
     function gerarId(prefixo) { return prefixo + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
-
     function obterRaiz(tipo) { return (tipo === 'global') ? dadosApp.cifras : dadosPessoais.cifras; }
-
     function salvarPorTipo(tipo) {
       return (tipo === 'global') ? salvarDadosGlobaisNoFirestore() : salvarNoFirestorePessoal();
     }
 
-    // Lista de pastas da raiz até a pasta do caminho (inclusive) — mesma lógica de obterPastaPorCaminho
     function obterCadeiaPastas(tipo, caminhoStr) {
       const lista = obterRaiz(tipo) || [];
       if (!caminhoStr || caminhoStr === 'raiz') return [];
@@ -436,7 +596,6 @@
       return cadeia;
     }
 
-    // Encontra uma pasta pela sequência de ids (da raiz até ela)
     function localizarPastaPorIds(tipo, ids) {
       let lista = obterRaiz(tipo) || [];
       let atual = null;
@@ -465,7 +624,6 @@
       });
     }
 
-    // Navegador de caminhos para subpastas (ex: "0" ou "0.subpastas.1")
     function obterPastaPorCaminho(tipo, caminhoStr) {
       const lista = (tipo === 'global') ? dadosApp.cifras : dadosPessoais.cifras;
       if (!caminhoStr || caminhoStr === 'raiz') return null;
@@ -482,7 +640,82 @@
       return atual;
     }
 
-    // Parte de cima da tela inicial (banner + busca) — fica fora da área que a busca atualiza
+    // Coleta todas as músicas para exibir resumo real na sidebar desktop
+    function coletarTodasMusicas(listaPastas, tipo, caminhoBase = '', acc = []) {
+      if (!Array.isArray(listaPastas)) return acc;
+      listaPastas.forEach((p, idx) => {
+        const cam = caminhoBase === '' ? `${idx}` : `${caminhoBase}.subpastas.${idx}`;
+        (p.musicas || []).forEach(m => acc.push({ musica: m, pastaNome: p.nome, tipo, caminho: cam }));
+        if (p.subpastas) coletarTodasMusicas(p.subpastas, tipo, cam, acc);
+      });
+      return acc;
+    }
+
+    function renderizarBlocoAuth() {
+      if (!usuarioLogado) {
+        return `
+          <div class="secao-auth-google">
+            <div style="text-align: center;">
+              <span class="material-icons-round" style="font-size: 38px; color: #2563eb; margin-bottom: 6px;">account_circle</span>
+              <h4 style="font-size: 16px; margin-bottom: 6px; color: #1e293b;">Área de Membros</h4>
+              <p>Faça login com sua conta do Google para criar e gerenciar suas pastas e cifras na nuvem de forma segura.</p>
+              <button onclick="executarLoginGoogle()" class="btn-google-custom">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                Fazer Login com Google
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div class="secao-auth-google">
+          <div class="perfil-card-layout">
+            ${usuarioLogado.foto ? `<img src="${usuarioLogado.foto}" class="avatar-usuario" referrerpolicy="no-referrer">` : `<div class="avatar-fallback">${usuarioLogado.nome.charAt(0).toUpperCase()}</div>`}
+            <div class="perfil-info-detalhes">
+              <h4 style="font-size: 16px; color: #0f172a; margin: 0; font-weight: 700;">Olá, ${usuarioLogado.nome}!</h4>
+              <span style="font-size: 13px; color: #64748b; word-break: break-all;">${usuarioLogado.email}</span>
+            </div>
+          </div>
+          <div style="margin-top: 18px; padding-top: 15px; border-top: 1px solid #e2e8f0; text-align: left;">
+            <button onclick="efetuarLogout()" class="btn" style="color: #ef4444; border-color: #fca5a5; font-size: 13px; padding: 6px 14px;">
+              <span class="material-icons-round" style="font-size: 16px;">logout</span> Sair da Conta
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderizarWidgetsSidebar() {
+      const todas = coletarTodasMusicas(dadosApp.cifras || [], 'global');
+      const totalPastas = (dadosApp.cifras || []).length;
+      const ultima = todas.length ? todas[todas.length - 1] : null;
+
+      return `
+        <div class="sidebar-widget">
+          <h4>Atividade Recente</h4>
+          <p style="font-size: 13px; color: var(--muted); margin: 0;">
+            ${totalPastas} pasta(s) e ${todas.length} música(s) disponíveis no repertório da banda.
+          </p>
+        </div>
+
+        <div class="sidebar-widget">
+          <h4>Última Música Adicionada</h4>
+          ${ultima ? `
+            <a href="#/musica/${ultima.tipo}/${ultima.caminho}/${ultima.musica.id}" class="widget-item-link">
+              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">🎵 ${ultima.musica.titulo}</span>
+              <span class="tag-tom">${ultima.musica.tom || 'C'}</span>
+            </a>
+          ` : `<p style="font-size: 13px; color: var(--muted); margin: 0;">Nenhuma música cadastrada ainda.</p>`}
+        </div>
+      `;
+    }
+
+    // Tela Inicial (Desktop em 2 colunas + Mobile em coluna única)
     function renderizarInicio() {
       const primeiroNome = usuarioLogado ? usuarioLogado.nome.split(' ')[0] : '';
       const banner = usuarioLogado ? `
@@ -504,21 +737,28 @@
         </div>`;
 
       return `
-        ${banner}
+        <div class="home-layout">
+          <div class="home-main">
+            <div class="search-row">
+              <div class="search-container">
+                <span class="material-icons-round">search</span>
+                <input id="inputBuscaPrincipal" type="text" placeholder="Buscar por pasta ou música..." oninput="termoBuscaAtual=this.value.toLowerCase(); document.getElementById('listaDinamica').innerHTML=gerarHtmlBuscaGeral();">
+              </div>
+              <button class="btn-filtro" onclick="mostrarToast('Filtros em breve!')" title="Filtros"><span class="material-icons-round">tune</span></button>
+            </div>
 
-        <div class="search-row">
-          <div class="search-container">
-            <span class="material-icons-round">search</span>
-            <input type="text" placeholder="Buscar por pasta ou música..." oninput="termoBuscaAtual=this.value.toLowerCase(); document.getElementById('listaDinamica').innerHTML=gerarHtmlBuscaGeral();">
+            <div id="listaDinamica">${renderizarListasInicio()}</div>
           </div>
-          <button class="btn-filtro" onclick="mostrarToast('Filtros em breve!')" title="Filtros"><span class="material-icons-round">tune</span></button>
-        </div>
 
-        <div id="listaDinamica">${renderizarListasInicio()}</div>
+          <aside class="home-sidebar">
+            ${banner}
+            ${renderizarBlocoAuth()}
+            ${renderizarWidgetsSidebar()}
+          </aside>
+        </div>
       `;
     }
 
-    // Listas da tela inicial (pastas públicas, pessoais e área de login)
     function renderizarListasInicio() {
       const cA = dadosApp.cifras || [];
 
@@ -527,10 +767,10 @@
         const totalMusicas = contarTotalMusicasNaPasta(p);
         return `
           <a href="#/pasta/global/${pIdx}" class="list-card">
-            <div class="card-icon folder"><span class="material-icons-round">folder</span></div>
+            <div class="card-icon folder"><span class="material-symbols-outlined">folder</span></div>
             <div class="card-content">
               <h4>${p.nome}</h4>
-              <span><span class="material-icons-round" style="font-size: 15px">music_note</span> ${totalMusicas} música(s)</span>
+              <span><span class="material-icons-round" style="font-size: 14px">music_note</span> ${totalMusicas} música(s)</span>
             </div>
             <span class="material-icons-round chevron">chevron_right</span>
           </a>
@@ -548,10 +788,10 @@
           const totalMusicas = contarTotalMusicasNaPasta(p);
           return `
             <a href="#/pasta/pessoal/${pIdx}" class="list-card">
-              <div class="card-icon pessoal"><span class="material-icons-round">music_note</span></div>
+              <div class="card-icon pessoal"><span class="material-symbols-outlined">folder</span></div>
               <div class="card-content">
                 <h4>${p.nome}</h4>
-                <span><span class="material-icons-round" style="font-size: 15px">music_note</span> ${totalMusicas} música(s)</span>
+                <span><span class="material-icons-round" style="font-size: 14px">music_note</span> ${totalMusicas} música(s)</span>
               </div>
               <span class="material-icons-round chevron">chevron_right</span>
             </a>
@@ -560,18 +800,11 @@
 
         htmlSecaoPessoal = `
           <div class="secao-cabecalho" style="margin-top:30px;">
-            <h3 class="secao-titulo">Suas Cifras</h3>
+            <h3 class="secao-titulo">Suas Cifras (${totalMusicasPessoais})</h3>
             <button onclick="abrirCriarNovaPastaPessoal('raiz', '')" class="btn-pill"><span class="material-icons-round">add</span> Nova Pasta Pessoal</button>
           </div>
 
           <div class="lista-grid" style="margin-bottom: 25px;">
-            <div class="list-card" style="cursor:default;">
-              <div class="card-icon pessoal"><span class="material-icons-round">music_note</span></div>
-              <div class="card-content">
-                <h4>${totalMusicasPessoais}</h4>
-                <span>Suas Músicas (Total)</span>
-              </div>
-            </div>
             ${htmlPastasPessoais || '<p style="color:#64748b; text-align:center;">Nenhuma pasta pessoal criada ainda.</p>'}
           </div>
         `;
@@ -588,38 +821,6 @@
         </div>
 
         ${htmlSecaoPessoal}
-
-        <div class="secao-auth-google">
-          ${!usuarioLogado ? `
-            <div style="text-align: center;">
-              <span class="material-icons-round" style="font-size: 36px; color: #2563eb; margin-bottom: 6px;">account_circle</span>
-              <h4 style="font-size: 15px; margin-bottom: 4px; color: #1e293b;">Área de Membros</h4>
-              <p>Faça login com sua conta do Google para criar e gerenciar suas pastas e cifras pessoais na nuvem de forma segura.</p>
-              <button onclick="executarLoginGoogle()" class="btn-google-custom">
-                <svg width="18" height="18" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                </svg>
-                Fazer Login com Google
-              </button>
-            </div>
-          ` : `
-            <div class="perfil-card-layout">
-              ${usuarioLogado.foto ? `<img src="${usuarioLogado.foto}" class="avatar-usuario" referrerpolicy="no-referrer">` : `<div class="avatar-fallback">${usuarioLogado.nome.charAt(0).toUpperCase()}</div>`}
-              <div class="perfil-info-detalhes">
-                <h4 style="font-size: 16px; color: #0f172a; margin: 0; font-weight: 700;">Olá, ${usuarioLogado.nome}!</h4>
-                <span style="font-size: 13px; color: #64748b; word-break: break-all;">${usuarioLogado.email}</span>
-              </div>
-            </div>
-            <div style="margin-top: 18px; padding-top: 15px; border-top: 1px solid #e2e8f0; text-align: left;">
-              <button onclick="efetuarLogout()" class="btn" style="color: #ef4444; border-color: #fca5a5; font-size: 13px; padding: 6px 14px;">
-                <span class="material-icons-round" style="font-size: 16px;">logout</span> Sair da Conta
-              </button>
-            </div>
-          `}
-        </div>
       `;
     }
 
@@ -627,9 +828,6 @@
       if (!Array.isArray(listaPastas)) return;
       listaPastas.forEach((p, pIdx) => {
         const caminhoAtual = caminhoBase === '' ? `${pIdx}` : `${caminhoBase}.subpastas.${pIdx}`;
-        if (p.nome.toLowerCase().includes(termo)) {
-          // Coincidiu nome de pasta
-        }
         if (p.musicas) {
           p.musicas.forEach(m => {
             if (m.titulo.toLowerCase().includes(termo) || p.nome.toLowerCase().includes(termo)) {
@@ -673,7 +871,6 @@
 
       const podeEditar = tipo === 'global' ? eProprietario() : true;
 
-      // Renderizar Subpastas
       let htmlSubpastas = '';
       if (pasta.subpastas && pasta.subpastas.length > 0) {
         htmlSubpastas = indicesOrdenados(pasta.subpastas).map((sIdx) => {
@@ -682,7 +879,7 @@
           const totalMusicasSub = contarTotalMusicasNaPasta(sub);
           return `
             <a href="#/pasta/${tipo}/${subCaminho}" class="list-card">
-              <div class="card-icon folder"><span class="material-icons-round">folder</span></div>
+              <div class="card-icon folder"><span class="material-symbols-outlined">folder</span></div>
               <div class="card-content">
                 <h4>${sub.nome}</h4>
                 <span><span class="material-icons-round" style="font-size: 15px">music_note</span> ${totalMusicasSub} música(s)</span>
@@ -693,7 +890,6 @@
         }).join('');
       }
 
-      // Botão de voltar inteligente para pasta pai ou home
       let caminhoVoltar = '#/';
       if (caminho.includes('.subpastas.')) {
         let partes = caminho.split('.');
@@ -719,7 +915,7 @@
             <button class="icon-btn" onclick="window.location.hash='${caminhoVoltar}'"><span class="material-icons-round">arrow_back</span></button>
             <h2 style="font-size:20px; font-weight:700; margin:0;">${pasta.nome}</h2>
           </div>
-          <div style="display:flex; gap:8px; align-items:center;">
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
             ${podeEditar ? `
               <button onclick="renomearPasta('${tipo}', '${caminho}')" class="icon-btn" title="Renomear Pasta"><span class="material-icons-round" style="font-size:18px;">edit</span></button>
               <button onclick="excluirPasta('${tipo}', '${caminho}')" class="icon-btn" title="Excluir Pasta" style="background:#fee2e2; color:#ef4444;"><span class="material-icons-round" style="font-size:18px;">delete</span></button>
@@ -790,7 +986,6 @@
           ` : ''}
         </div>
         
-        <!-- CONTROLES FIXOS (STICKY) NA TELA -->
         <div class="controles-musica-moderno">
           <div class="linha-controles">
             <div class="controle-pilula"><span class="label">Tom</span><button class="btn-circular" onclick="alterarTom(-1)">-</button><select id="selectTom" class="select-invisivel" onchange="definirTom(this.value)">${opT}</select><button class="btn-circular" onclick="alterarTom(1)">+</button></div>
@@ -814,7 +1009,6 @@
         </button>
         <input type="file" id="inputAudioPratica" accept="audio/*" style="display: none;" onchange="carregarAudioPratica(event)">
         
-        <!-- PLAYER DE ÁUDIO FIXO (STICKY) -->
         <div class="player-pratica-container" id="containerPlayerPratica" style="display: none;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
@@ -856,12 +1050,10 @@
       const m = pasta.musicas.find(x => x.id === mId);
       if (!m) return;
 
-      // Tom em que o texto do editor está escrito agora (sempre normalizado para a escala em sustenidos)
       tomEdicaoAtual = normalizarNota(m.tom || 'C');
       if (NOTAS.indexOf(tomEdicaoAtual) === -1) tomEdicaoAtual = 'C';
 
       const opcoesTom = NOTAS.map(n => `<option value="${n}" ${tomEdicaoAtual === n ? 'selected' : ''}>${n}</option>`).join('');
-
       const tituloSeguro = (m.titulo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
       document.getElementById('app').innerHTML = `
@@ -908,8 +1100,6 @@
       agendarAjusteEditor();
     }
 
-    // Ajusta a fonte do editor para a cifra caber na largura.
-    // Parte do tamanho já usado na leitura e só REDUZ se precisar (nunca estoura para 30px como antes).
     function ajustarZoomEditor() {
       const ed = document.getElementById('editConteudo');
       if (!ed) return;
@@ -919,22 +1109,18 @@
       tamanhoFonteAtual = t;
     }
 
-    // No PC a barra de rolagem da página e as fontes carregam depois da primeira medição,
-    // por isso o ajuste é refeito quando o layout e as fontes já estão estáveis.
     function agendarAjusteEditor() {
       ajustarZoomEditor();
       requestAnimationFrame(() => { ajustarZoomEditor(); requestAnimationFrame(ajustarZoomEditor); });
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarZoomEditor);
     }
 
-    // Botões A- / A+ do editor
     function alterarFonteEditor(d) {
       tamanhoFonteAtual = Math.max(10, Math.min(45, (tamanhoFonteAtual || 16) + d));
       const ed = document.getElementById('editConteudo');
       if (ed) ed.style.fontSize = tamanhoFonteAtual + 'px';
     }
 
-    // Transpõe o texto do editor do tom atual para o novo tom
     function definirTomEditor(novoTom) {
       const ed = document.getElementById('editConteudo');
       const sel = document.getElementById('editTom');
@@ -942,7 +1128,7 @@
       const novo = normalizarNota(novoTom);
       if (NOTAS.indexOf(novo) === -1) return;
       const st = calcularDiferenca(tomEdicaoAtual, novo);
-      if (st !== 0) ed.innerHTML = transporCifra(ed.innerHTML, st, false); // false = sem <span class="acorde">
+      if (st !== 0) ed.innerHTML = transporCifra(ed.innerHTML, st, false);
       tomEdicaoAtual = novo;
       if (sel) sel.value = novo;
       ajustarZoomEditor();
@@ -963,7 +1149,7 @@
       const novoTitulo = document.getElementById('editTitulo').value.trim();
       if (!novoTitulo) { alert('Digite um título para a música.'); return; }
       m.titulo = novoTitulo;
-      m.tom = tomEdicaoAtual; // sempre igual ao tom em que o texto do editor está escrito
+      m.tom = tomEdicaoAtual;
       m.conteudo = document.getElementById('editConteudo').innerHTML;
 
       if (tipo === 'global') await salvarDadosGlobaisNoFirestore();
@@ -973,14 +1159,12 @@
       voltarParaMusica(tipo, caminho, m.id);
     }
 
-    // Volta para a visualização da cifra (se o endereço já for o mesmo, redesenha a tela direto)
     function voltarParaMusica(tipo, caminho, mId) {
       const novoHash = `#/musica/${tipo}/${caminho}/${mId}`;
       if (window.location.hash === novoHash) navegar();
       else window.location.hash = novoHash;
     }
 
-    // Mede a altura dos controles fixos para o player de áudio grudar logo abaixo deles
     function ajustarAlturaControles() {
       const c = document.querySelector('.controles-musica-moderno');
       if (c) document.documentElement.style.setProperty('--h-controles', (c.offsetHeight - 1) + 'px');
@@ -1059,7 +1243,6 @@
       let removida = null;
       let caminhoPai = '';
 
-      // O índice vem do próprio caminho (antes usava o id, que as pastas antigas não têm)
       if (!caminho.includes('.subpastas.')) {
         const lista = obterRaiz(tipo);
         const idx = parseInt(caminho);
@@ -1068,7 +1251,7 @@
       } else {
         const partes = caminho.split('.');
         const indiceAlvo = parseInt(partes.pop());
-        partes.pop(); // remove 'subpastas'
+        partes.pop();
         caminhoPai = partes.join('.');
         const pastaPai = obterPastaPorCaminho(tipo, caminhoPai);
         if (!pastaPai || !pastaPai.subpastas || pastaPai.subpastas[indiceAlvo] !== pasta) return;
@@ -1106,8 +1289,6 @@
     function transporNotaUnica(n, st) { let nn=normalizarNota(n); let idx=NOTAS.indexOf(nn); if(idx===-1)return n; let nIdx=(idx+st)%12; if(nIdx<0)nIdx+=12; return NOTAS[nIdx]; }
     function transporElementoAcorde(ac, st) { return ac.replace(/[A-G][b#]?/g, m=>transporNotaUnica(m,st)); }
 
-    // comSpan = true  -> leitura: acordes saem dentro de <span class="acorde"> (ficam azuis)
-    // comSpan = false -> editor: acordes saem como texto puro, sem marcação extra
     function transporCifra(txt, st, comSpan = true) {
       const tn = normalizarHtmlLinhas(txt); const RE = /^[A-G][b#]?(?:m|M|maj|min|dim|aug|sus|add|º|°|\+|-)?\d*(?:M|m|maj|b5|#5|b9|#9|\+|-)?(?:\([^\)]+\))?(?:\/[A-G][b#]?)?$/i; const AMB=new Set(['A','E','B','EM','AM']);
       return tn.split('\n').map(linha => {
@@ -1414,8 +1595,11 @@
     function atualizarNavAtivo(hash) {
       const emConfig = hash === '#/configuracoes' || hash === '#/lixeira';
       const i = document.getElementById('navInicio'), c = document.getElementById('navConfig');
+      const di = document.getElementById('deskNavInicio'), dc = document.getElementById('deskNavConfig');
       if (i) i.classList.toggle('ativo', !emConfig);
       if (c) c.classList.toggle('ativo', emConfig);
+      if (di) di.classList.toggle('ativo', !emConfig);
+      if (dc) dc.classList.toggle('ativo', emConfig);
     }
 
     // --- ROUTER SPA ---
@@ -1426,7 +1610,6 @@
       const hash = window.location.hash;
       const app = document.getElementById('app');
 
-      // Esconde a barra inferior na tela da cifra (visual apenas)
       document.body.classList.toggle('sem-nav', hash.startsWith('#/musica/'));
       atualizarNavAtivo(hash);
 
